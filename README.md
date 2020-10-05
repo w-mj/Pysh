@@ -1,0 +1,98 @@
+# PYSH
+
+pysh是一个基于Python语法的脚本解释程序。
+
+## 计划语法
+
+### 0.通过e字符串执行外部命令
+
+```
+e"ls"
+```
+
+e字符串会被解析成可执行外部命令的对象(Exec)。以上语句应执行外部命令ls。返回执行的结果（stdout、stderr、return code等）
+
+可执行对象最好能做成延迟计算（待定）。
+
+e字符串默认包含f字符串语义。
+
+### 1. 管道运算符
+
+```
+e"ps -ef" | e'grep "nginx"'
+```
+
+管道运算符可以将程序的输出传递给字符串，此时第一个执行的stdout作为第二个执行的stdin。
+
+当|运算符两侧类型为整数时，依然作为按位或。
+
+```
+def operator|(Exec e1, Exec e2):
+	# 执行e1，将stdout作为e2的stdin
+	return e2
+def opeartor|(str s1, Exec e2):
+	# 将s1作为e2的stdin
+	return e2
+def operator|(Exec e1, str s2):
+	# 使用s2描述的正则表达式过滤e1的输出
+```
+
+### 2. 获得外部命令结果
+
+```
+result = e"ps -ef".stdout
+```
+
+### 3. 参数结构体
+
+```
+Args arg1(prefix=--, abbr=true, deli=' '):
+	f = filter
+	D = INPUT
+	p = tcp
+	m = state
+	state = NEW
+	m = tcp
+	dport = 22
+	j = ACCEPT
+e"iptables ${arg1}"
+```
+
+以上代码会被编译成"iptables -f filter -D INPUT -p tcp -m state --state NEW -m tcp --dport 22 -j ACCEPT"
+
+Args类型应被看作是字符串的另一种描述方式，应在编译期将其转换为字符串。
+
+### 4. 正则表达式字面量
+
+```
+e"ps -ef" | r"^user.+" | e"some command else"
+```
+
+作为管道参数的字符串会被解析成正则表达式，将第一个命令的stdout经过正则过滤后传递给下一个命令。
+
+经正则表达式过滤后得到的结果为字符串。
+
+### 5. 对象模板
+
+```
+class PsResult:
+	"${PID}\s+${TTY}\s+${TIME}\s+${CMD}"
+res = e"ps" | PsResult
+```
+
+以上代码将ps命令的输出按PsResult的匹配，返回PsResult的对象或数组。以上代码应该被编译成下面的样子（大概）
+
+```python
+class PsResult:
+	def __init__(self, PID, TTY, TIME, CMD):
+        self.PID = PID
+        self.TTY = TTY
+        self.TIME = TIME
+        self.CMD = CMD
+    @classmethod
+    def generate(s):
+        pattern = re.compile(r"(.+?)\s+(.+?)\s+(.+?)\s+(.+?)")
+        res = re.findall(pattern, s)
+        return [PsResult(**x[1:]) for x in res]  # 这瞎写的
+```
+
