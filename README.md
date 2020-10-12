@@ -4,7 +4,7 @@ pysh是一个基于Python语法的脚本解释程序。
 
 ## 计划语法
 
-### 0.通过e字符串执行外部命令
+### 0.通过e字符串执行外部命令（语法）
 
 ```
 e"ls"
@@ -43,7 +43,7 @@ def operator|(Exec e1, str s2):
 result = e"ps -ef".stdout
 ```
 
-### 3. 参数结构体
+### 3. 参数结构体（语法）
 
 ```
 Args arg1(prefix=--, abbr=true, deli=' '):
@@ -62,21 +62,22 @@ e"iptables ${arg1}"
 
 Args类型应被看作是字符串的另一种描述方式，应在编译期将其转换为字符串。
 
-### 4. 正则表达式字面量
+### 4. 正则表达式字面量（语法）
 
 ```
-e"ps -ef" | r"^user.+" | e"some command else"
+e"ps -ef" | g"^user.+" | e"some command else"
 ```
 
 作为管道参数的字符串会被解析成正则表达式，将第一个命令的stdout经过正则过滤后传递给下一个命令。
 
+暂时不支持匹配组，若匹配到多个，将多个结果强行拼接到一起。
+
 经正则表达式过滤后得到的结果为字符串。
 
-### 5. 对象模板
+### 5. 对象模板（语法）
 
 ```
-class PsResult:
-	"${PID}\s+${TTY}\s+${TIME}\s+${CMD}"
+template PsResult: "${PID}\s+${TTY}\s+${TIME}\s+${CMD}"
 res = e"ps" | PsResult
 ```
 
@@ -104,7 +105,7 @@ lib.a -> func.o main.o
 (.+)\.c -> 
 ```
 
-### 7. xargs功能
+### 7. xargs功能（语法）
 
 ```
 lsof -i:8080 | sed '2p' | awk '{print $1}' | xargs -x kill -9
@@ -117,7 +118,7 @@ e"lsof -i:8080" | e"kill -9 $1[1,1]"
 
 同样，使用$2表示前一个命令的stderr，使用$?表示前一个命令的返回值。
 
-### 8. 参数中的列表和字典
+### 8. 参数中的列表和字典（语法）
 
 ```
 lst = [1, 2, 3]
@@ -129,4 +130,29 @@ e"prog ${dic}" 应执行 prog -a 1 --arg balabala --lst 1 3
 也应该可以指定在字典情形时的参数前缀和分隔符。
 
 生成参数在Exec对象构造时进行，即之后再修改lst中的内容不应再影响程序的参数。
+
+### 9. 给Python加个Switch（语法）
+
+```
+s = "123"
+switch(s):
+	123 : func1()
+	"456" :
+		func1()
+		func2()
+	default : s + 1
+```
+
+```python
+s = "123"
+if s == 123:
+    func1()
+elif s == "456":
+    func1()
+    func2()
+else:
+    s + 1
+```
+
+
 
