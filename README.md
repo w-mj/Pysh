@@ -154,5 +154,26 @@ else:
     s + 1
 ```
 
+### 10. 添加python静态变量（语法）
+```
+void foo() {
+    static int count = 0;
+    count ++;
+}
+```
+
+```python
+def static_vars(**kwargs):
+    def decorate(func):
+        for k in kwargs:
+            setattr(func, k, kwargs[k])
+        return func
+    return decorate
+
+@static_vars(counter = 0)
+def foo():
+    foo.counter += 1
+```
+
 
 
