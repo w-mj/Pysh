@@ -156,10 +156,8 @@ else:
 
 ### 10. 添加python静态变量（语法）
 ```
-void foo() {
-    static int count = 0;
-    count ++;
-}
+static int count = 0;
+count ++;
 ```
 
 ```python
