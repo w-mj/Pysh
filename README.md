@@ -156,22 +156,19 @@ else:
 
 ### 10. 添加python静态变量（语法）
 ```
-static int count = 0;
-count ++;
+def func1(a, b)
+	static c = 1
+	c += 1
+	balabala
 ```
 
 ```python
-def static_vars(**kwargs):
-    def decorate(func):
-        for k in kwargs:
-            setattr(func, k, kwargs[k])
-        return func
-    return decorate
-
-@static_vars(counter = 0)
-def foo():
-    foo.counter += 1
+class static_class_func1:
+    def __init__()****:
+        self.c = 1
+    def __call__(self, a, b):
+        self.c += 1
+        balabala
+func1 = static_class_func1()
 ```
-
-
 
