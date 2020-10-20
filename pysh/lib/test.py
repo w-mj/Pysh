@@ -1,7 +1,6 @@
 from sys import stdin
 import sys
 from pysh.lib.exec import Exec
-import subprocess
 
 
 def generate(n):

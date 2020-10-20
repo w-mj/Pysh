@@ -3,6 +3,8 @@ import enum
 import threading
 
 from typing import List
+from pysh.config import Config
+import logging as log
 
 
 class Exec:
@@ -29,17 +31,20 @@ class Exec:
             input_str = self._input
         else:
             raise Exception(f"type {type(self._input)} is not supported as input")
-        print("start run " + self._cmd)
-        print("with input " + str(input_str))
+        log.debug("start run " + self._cmd)
+        log.debug("with input " + str(input_str))
         self._result = subprocess.run(self._cmd, input=input_str, capture_output=True)
         self._state = Exec.State.FINISHED
-        print("end run " + self._cmd)
+        log.debug("end run " + self._cmd)
 
     def exec(self):
         if self._state != Exec.State.NOT_START:
             return
-        threading.Thread(target=Exec.__exec_func, args=(self,)).start()
-        # self.__exec_func()
+
+        if Config.run_in_thread:
+            threading.Thread(target=Exec.__exec_func, args=(self,)).start()
+        else:
+            self.__exec_func()
 
     def join(self):
         while self._state != Exec.State.FINISHED:
