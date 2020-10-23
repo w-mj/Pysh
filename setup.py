@@ -1,33 +1,18 @@
-try:
-    from setuptools import setup
-    from setuptools.command.install import install as _install
-except ImportError:
-    from distutils.core import setup
-    from distutils.command.install import install as _install
+from setuptools import setup
+from distutils.sysconfig import get_python_lib
 
-
-def _post_install(install_lib):
-    import shutil
-    shutil.copy('pysh.pth', install_lib)
-
-class install(_install):
-    def run(self):
-        self.path_file = 'pysh'
-        _install.run(self)
-        self.execute(_post_install, (self.install_lib,), msg="Running post install task")
-
-version = "0.1"
-
+SITE_PACKAGES_PATH = get_python_lib()
+print(SITE_PACKAGES_PATH)
 setup(
-    cmdclass={'install': install},
     name="pysh",
-    version=version,
+    version='1.0',
     download_url='https://github.com/w-mj/Pysh',
-    packages=["pysh", "pysh.codec"],
+    packages=["pysh", "pysh.codec", "pysh.lib"],
     license='MIT',
     description="Run program like bash scripts.",
-    long_description=open('README.md').read(),
+    long_description=open('README.md', encoding='utf-8').read(),
     keywords='run program bash',
+    data_files=[(SITE_PACKAGES_PATH, ['pysh.pth'])],
     classifiers=[
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',
