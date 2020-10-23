@@ -1,13 +1,22 @@
 import subprocess
 import enum
 import threading
+from typing import List, Callable
 
-from typing import List
 from pysh.config import Config
 import logging as log
+import re
 
 
 class Exec:
+    class OutputFilter:
+        def __init__(self, upstream: 'Exec', func: Callable[[subprocess.CompletedProcess], str]):
+            self.upstream = upstream
+            self.func = func
+
+        def __call__(self):
+            return self.func(self.upstream.result())
+
     class State(enum.Enum):
         NOT_START = 0
         RUNNING = 1
@@ -60,6 +69,11 @@ class Exec:
         self.join()
         return self._result.stderr
 
+    def result(self):
+        self.exec()
+        self.join()
+        return self._result
+
     @property
     def state(self):
         return self._state
@@ -73,9 +87,19 @@ class Exec:
         self._input = value
 
     def __or__(self, other):
-        assert isinstance(other, Exec)
-        other._input = self
-        return other
+        if isinstance(other, Exec):
+            # 管道传递
+            other._input = self
+            return other
+        elif isinstance(other, str):
+            # 正则过滤
+            def _filter(result: subprocess.CompletedProcess):
+                pat = re.compile(other)
+                res = pat.finditer(result.stdout)
+                return '\n'.join(map(lambda x: x if isinstance(x, str) else ' '.join(x), res))
+            other._input = Exec.OutputFilter(self, _filter)
+        elif callable(other):
+            other._input = Exec.OutputFilter(self, other)
 
     def __ror__(self, other):
         if isinstance(other, (str, Exec)):
