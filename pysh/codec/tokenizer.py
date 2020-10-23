@@ -49,6 +49,9 @@ def indents(n):
 
 def pysh_tokenize(readline):
     tokens = tokenize.generate_tokens(readline)
+    indent = 0
+    last_obj = None
+    gen_name = get_temp()
     try:
         while True:
             token = next(tokens)
@@ -59,17 +62,26 @@ def pysh_tokenize(readline):
                 print(tnext)
                 if tnext[0] == tokenize.STRING and tnext[2][1] == tend[1]:
                     # 解析e字符串
+                    last_obj = next(gen_name)
+                    # yield tokenize.TokenInfo(tokenize.NAME, last_obj, token[2], (0, 0), '')
+                    # yield tokenize.TokenInfo(tokenize.OP, '=', (0, 0), (0, 0), '')
                     yield tokenize.TokenInfo(tokenize.NAME, 'Exec', token[2], (0, 0), '')
                     yield tokenize.TokenInfo(tokenize.OP, '(', (0, 0), (0, 0), '')
                     yield tokenize.TokenInfo(tokenize.STRING, tnext[1], (0, 0), (0, 0), '')
-                    last = tokenize.TokenInfo(tokenize.OP, ')', (0, 0), tnext[3], '')
-                    yield last
+                    yield tokenize.TokenInfo(tokenize.OP, ')', (0, 0), tnext[3], '')
+                    # yield tokenize.TokenInfo(tokenize.NEWLINE, '\n', (0, 0), tnext[3], '')
+                    # for x in indents(indent):
+                    #     yield x
                     continue
                 else:
                     # e后面不是紧跟字符串，原样返回
                     yield token
                     yield tnext
                     continue
+            elif ttype == tokenize.INDENT:
+                indent += 1
+            elif ttype == tokenize.NEWLINE:
+                indent = 0
             yield token
     except (StopIteration, tokenize.TokenError):
         pass

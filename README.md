@@ -164,7 +164,7 @@ def func1(a, b)
 
 ```python
 class static_class_func1:
-    def __init__()****:
+    def __init__(self):
         self.c = 1
     def __call__(self, a, b):
         self.c += 1
@@ -172,3 +172,14 @@ class static_class_func1:
 func1 = static_class_func1()
 ```
 
+## 文法
+```
+eobj -> e<str> 
+eobjt -> <eobj> | (<eobj>[,<eobj>])
+efilter -> <str>
+`est -> <eobj> | <eobjl><oper><est2>
+estl -> <eobj> | <eobjt> | <str>
+est2 -> <eobjr><oper><eobjr>
+estr -> <efilter> | <eobjt> | <eobj> | <callable>
+oper -> | && ||
+```
