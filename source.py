@@ -1,4 +1,4 @@
-e"ps -ef " | e"grep nginx" | g"balabala"
+	e"ps -ef " | e"grep nginx" | g"balabala"
 e "ls -l"
 Exec("ls -l")
 for i in range(10):

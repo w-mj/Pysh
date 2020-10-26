@@ -105,7 +105,7 @@ lib.a -> func.o main.o
 (.+)\.c -> 
 ```
 
-### 7. xargs功能（语法）
+### 7. xargs功能（执行时）
 
 ```
 lsof -i:8080 | sed '2p' | awk '{print $1}' | xargs -x kill -9
@@ -175,7 +175,7 @@ func1 = static_class_func1()
 ## 文法
 ```
 `statement -> <e-statement>
-e-statement -> <e-obj>| <e-obj><oper><e-obj>
+e-statement -> <e-obj> | <e-obj><oper><e-statement>
 e-obj -> [e|g]<str> | <e-tuple>
 oper -> | && || ~
 e->tuple -> e<str>{,e<str>}

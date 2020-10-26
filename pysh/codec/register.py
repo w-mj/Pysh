@@ -11,7 +11,8 @@ print("Import pysh.codec.register")
 def pysh_transform(stream):
     try:
         tokens = tokenize.generate_tokens(stream.readline)
-        parse = parser.statement(tokens)
+        tokens = parser.TokenGenerator(tokens)
+        parse = parser.start(tokens)
         output = pysh_untokenize(parse)
     except Exception as ex:
         raise ex
