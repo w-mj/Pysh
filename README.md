@@ -174,12 +174,9 @@ func1 = static_class_func1()
 
 ## 文法
 ```
-eobj -> e<str> 
-eobjt -> <eobj> | (<eobj>[,<eobj>])
-efilter -> <str>
-`est -> <eobj> | <eobjl><oper><est2>
-estl -> <eobj> | <eobjt> | <str>
-est2 -> <eobjr><oper><eobjr>
-estr -> <efilter> | <eobjt> | <eobj> | <callable>
-oper -> | && ||
+`statement -> <e-statement>
+e-statement -> <e-obj>| <e-obj><oper><e-obj>
+e-obj -> [e|g]<str> | <e-tuple>
+oper -> | && || ~
+e->tuple -> e<str>{,e<str>}
 ```

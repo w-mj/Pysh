@@ -1,0 +1,3 @@
+
+class NoneOfMyBusiness(RuntimeError):
+    pass

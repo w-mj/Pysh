@@ -1,6 +1,7 @@
 import tokenize
 from io import StringIO
 import sys
+from . import parser
 
 TEXT_TYPE = 'unicode' if sys.version_info[0] == 2 else 'str'
 
@@ -18,7 +19,7 @@ def pysh_untokenize(tokens):
     prev_col = 0
 
     for token in tokens:
-        ttype, tvalue, tstart, tend, tline = token
+        ttype, tvalue, tstart, tend, tline = token.to_token()
         row, col = tstart
 
         # Add whitespace
@@ -49,6 +50,9 @@ def indents(n):
 
 def pysh_tokenize(readline):
     tokens = tokenize.generate_tokens(readline)
+    parse = parser.statement(tokens)
+    # print(list(parse))
+    return parse
     indent = 0
     last_obj = None
     gen_name = get_temp()

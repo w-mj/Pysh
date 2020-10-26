@@ -1,4 +1,7 @@
 import codecs, encodings
+import tokenize
+
+from . import parser
 from .tokenizer import pysh_tokenize, pysh_untokenize
 from io import StringIO
 
@@ -7,7 +10,9 @@ print("Import pysh.codec.register")
 
 def pysh_transform(stream):
     try:
-        output = pysh_untokenize(pysh_tokenize(stream.readline))
+        tokens = tokenize.generate_tokens(stream.readline)
+        parse = parser.statement(tokens)
+        output = pysh_untokenize(parse)
     except Exception as ex:
         raise ex
     return output.encode("utf-8")
