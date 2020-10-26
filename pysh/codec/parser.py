@@ -76,7 +76,7 @@ def e_obj(tokens):
     if first.type == tokenize.NAME:
         if first.value == "e":
             second = tokens[1]
-            if second.type != tokenize.STRING or second != first:
+            if second.type != tokenize.STRING or second.start != first.end:
                 raise NoneOfMyBusiness()
             tokens.clear()  # 清空两个缓存
             return TokenList(
@@ -87,7 +87,7 @@ def e_obj(tokens):
             )
         if first.value == 'g':
             second = tokens[1]
-            if second.type != tokenize.STRING or second != first:
+            if second.type != tokenize.STRING or second.start != first.end:
                 raise NoneOfMyBusiness()
             tokens.clear()  # 清空两个缓存
             return TokenList(
