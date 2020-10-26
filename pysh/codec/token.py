@@ -93,7 +93,7 @@ class TokenList:
         return self
 
     def push_line(self, newline: 'TokenList', indent):
-        self.push_back([Token(tokenize.INDENT, '\t')] * indent * 4)
+        self.push_back([Token(tokenize.INDENT, '\t')] * indent)
         self.push_back(newline)
         return self
 
