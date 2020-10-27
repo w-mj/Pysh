@@ -83,6 +83,8 @@ class TokenList:
         self._data = list(data)
         self._var_name = None
         self._indent = 0
+        self._last_var_name = None
+        self._generated_name = False
 
     def push_front(self, data):
         assert isinstance(data, (list, TokenList))
@@ -130,7 +132,16 @@ class TokenList:
     def var_name(self):
         if not self._var_name:
             self._var_name = next(temp)
+            self._generated_name = True
+        if not self._last_var_name:
+            self._last_var_name = self._var_name
         return self._var_name
+
+    @var_name.setter
+    def var_name(self, value):
+        self._var_name = value
+        if self._last_var_name is None:
+            self._last_var_name = value
 
     @property
     def have_name(self):
@@ -143,3 +154,17 @@ class TokenList:
     @indent.setter
     def indent(self, value):
         self._indent = value
+
+    @property
+    def last_var_name(self):
+        return self._last_var_name
+
+    @last_var_name.setter
+    def last_var_name(self, value):
+        # print("set last var name " + value)
+        self._last_var_name = value
+
+    @property
+    def generated_name(self):
+        return self._generated_name
+
