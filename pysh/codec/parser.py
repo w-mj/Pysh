@@ -46,14 +46,13 @@ def statement(tokens: TokenGenerator):
                 Token(tokenize.NAME, o1.var_name),
                 Token(tokenize.OP, '=')
             ])
-        o1.eol()
+        o1.eol()  # o1为赋值语句，换一行
         if not o2.have_name or o2.generated_name:
             o2.newline().push_front([
                 Token(tokenize.NAME, o2.var_name),
                 Token(tokenize.OP, '=')
-            ]).eol()
-        else:
-            o2.newline().eol()
+            ])  # o2添加赋值语句
+        o2.newline().eol()
         tk_func = None
         if op.value == '|':
             tk_func = Token(tokenize.NAME, 'set_input')
@@ -74,8 +73,8 @@ def statement(tokens: TokenGenerator):
                 Token(tokenize.OP, '('),
                 Token(tokenize.NAME, o1.var_name),
                 Token(tokenize.OP, ')')
-            ).newline().eol()
-            o1.push_line(o2, o1.indent).push_line(o3, o1.indent)
+            ).newline()  # o3为将运算符转换成函数语句
+            o1.push_line(o2).push_line(o3)
             o1.last_var_name = o2.last_var_name
         else:
             # 处理等号
@@ -84,7 +83,7 @@ def statement(tokens: TokenGenerator):
                 op,
                 Token(tokenize.NAME, o2.last_var_name)
             ).newline().eol()
-            o2.push_line(o3, o1.indent)
+            o2.push_line(o3)
             o1 = o2
     return o1
 
