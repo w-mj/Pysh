@@ -4,15 +4,6 @@ from .excepts import NoneOfMyBusiness
 from .token import Token, TokenGenerator, TokenList
 
 
-def _temp_generator():
-    i = 0
-    while True:
-        i += 1
-        yield f"_temp_{i}"
-
-temp = _temp_generator()
-
-
 def start(tokens):
     while True:
         try:
@@ -47,26 +38,27 @@ def statement(tokens: TokenGenerator):
                 tokens.clear()
     if op:
         o2 = statement(tokens)
-        o1_n = next(temp)
         o1.push_front([
-            Token(tokenize.NAME, o1_n),
+            Token(tokenize.NAME, o1.var_name),
             Token(tokenize.OP, '=')
         ]).eol()
-        o2_n = next(temp)
-        o2.newline().push_front([
-            Token(tokenize.NAME, o2_n),
-            Token(tokenize.OP, '=')
-        ]).eol()
+        if not o2.have_name:
+            o2.newline().push_front([
+                Token(tokenize.NAME, o2.var_name),
+                Token(tokenize.OP, '=')
+            ]).eol()
+        else:
+            o2.newline()
         o3 = TokenList(
-            Token(tokenize.NAME, o2_n),
+            Token(tokenize.NAME, o2.var_name),
             Token(tokenize.OP, '.'),
             Token(tokenize.NAME, 'set_input'),
             Token(tokenize.OP, '('),
-            Token(tokenize.NAME, o1_n),
+            Token(tokenize.NAME, o1.var_name),
             Token(tokenize.OP, ')')
         ).newline().eol()
-        print(tokens.indent)
-        o1.push_line(o2, tokens.indent).push_line(o3, tokens.indent)
+        print(o1.indent)
+        o1.push_line(o2, o1.indent).push_line(o3, o1.indent)
         # o1.push_line(o2, 0).push_line(o3, 0)
     return o1
 
@@ -75,25 +67,21 @@ def e_obj(tokens):
     first = tokens[0]
     if first.type == tokenize.NAME:
         if first.value == "e":
-            second = tokens[1]
-            if second.type != tokenize.STRING or second != first:
-                raise NoneOfMyBusiness()
-            tokens.clear()  # 清空两个缓存
-            return TokenList(
-                Token(tokenize.NAME, "Exec", start=first.start),
-                Token(tokenize.OP, '('),
-                Token(tokenize.STRING, second.value),
-                Token(tokenize.OP, ')', end=second.end)
-            )
-        if first.value == 'g':
-            second = tokens[1]
-            if second.type != tokenize.STRING or second != first:
-                raise NoneOfMyBusiness()
-            tokens.clear()  # 清空两个缓存
-            return TokenList(
-                Token(tokenize.NAME, "Filter", start=first.start),
-                Token(tokenize.OP, '('),
-                Token(tokenize.STRING, second.value),
-                Token(tokenize.OP, ')', end=second.end)
-            )
+            tk_func = Token(tokenize.NAME, "Exec", start=first.start)
+        elif first.value == 'g':
+            tk_func = Token(tokenize.NAME, "Filter", start=first.start)
+        else:
+            raise NoneOfMyBusiness()
+        second = tokens[1]
+        if second.type != tokenize.STRING or second.start != first.end:
+            raise NoneOfMyBusiness()
+        tokens.clear()  # 清空两个缓存
+        tk = TokenList(
+            tk_func,
+            Token(tokenize.OP, '('),
+            Token(tokenize.STRING, second.value),
+            Token(tokenize.OP, ')', end=second.end)
+        )
+        tk.indent = tokens.indent
+        return tk
     raise NoneOfMyBusiness
