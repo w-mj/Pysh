@@ -3,6 +3,7 @@ from typing import List, Generator, TypeVar, NewType
 
 
 class Token:
+
     def __init__(self, type, value, start=(0, 0), end=(0, 0), line=None):
         self.type = type
         self.value = value
@@ -57,6 +58,12 @@ class TokenGenerator:
         else:
             self._pre.clear()
 
+    def push_front(self, item):
+        if isinstance(item, TokenList):
+            self._pre = item._data + self._pre
+        else:
+            self._pre.insert(0, item)
+
     def keep_last_one(self):
         self.clear(len(self) - 1)
 
@@ -75,16 +82,22 @@ def _temp_generator():
         yield f"_pysht_{i}_"
 
 
-temp = _temp_generator()
+temp_name = _temp_generator()
 
 
 class TokenList:
-    def __init__(self, *data):
+    Exec = 1
+    Filter = 2
+    Normal = 3
+    FULL = 4
+
+    def __init__(self, data, indent, type):
         self._data = list(data)
         self._var_name = None
-        self._indent = 0
+        self._indent = indent
         self._last_var_name = None
         self._generated_name = False
+        self.type = type
 
     def push_front(self, data):
         assert isinstance(data, (list, TokenList))
@@ -131,11 +144,14 @@ class TokenList:
     @property
     def var_name(self):
         if not self._var_name:
-            self._var_name = next(temp)
-            self._generated_name = True
+            self.generate_name()
         if not self._last_var_name:
             self._last_var_name = self._var_name
         return self._var_name
+
+    def generate_name(self):
+        self._var_name = next(temp_name)
+        self._generated_name = True
 
     @var_name.setter
     def var_name(self, value):
