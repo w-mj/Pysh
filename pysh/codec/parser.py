@@ -49,6 +49,7 @@ def statement(tokens: TokenGenerator, not_first=False):
 
         if o1.type == TokenList.Normal and o2.type == TokenList.Normal:
             tokens.push_front(o2)
+            tokens.push_front(op)
             tokens.push_front(o1)
             raise NoneOfMyBusiness
 
