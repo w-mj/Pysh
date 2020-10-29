@@ -8,15 +8,16 @@ import logging as log
 import re
 
 
+class Filter:
+    def __init__(self, upstream: 'Exec', func: Callable[[subprocess.CompletedProcess], str]):
+        self.upstream = upstream
+        self.func = func
+
+    def __call__(self):
+        return self.func(self.upstream.result())
+
+
 class Exec:
-    class OutputFilter:
-        def __init__(self, upstream: 'Exec', func: Callable[[subprocess.CompletedProcess], str]):
-            self.upstream = upstream
-            self.func = func
-
-        def __call__(self):
-            return self.func(self.upstream.result())
-
     class State(enum.Enum):
         NOT_START = 0
         RUNNING = 1
@@ -97,9 +98,9 @@ class Exec:
                 pat = re.compile(other)
                 res = pat.finditer(result.stdout)
                 return '\n'.join(map(lambda x: x if isinstance(x, str) else ' '.join(x), res))
-            other._input = Exec.OutputFilter(self, _filter)
+            other._input = Filter(self, _filter)
         elif callable(other):
-            other._input = Exec.OutputFilter(self, other)
+            other._input = Filter(self, other)
 
     def __ror__(self, other):
         if isinstance(other, (str, Exec)):

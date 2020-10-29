@@ -3,6 +3,7 @@ from typing import List, Generator, TypeVar, NewType
 
 
 class Token:
+
     def __init__(self, type, value, start=(0, 0), end=(0, 0), line=None):
         self.type = type
         self.value = value
@@ -57,6 +58,12 @@ class TokenGenerator:
         else:
             self._pre.clear()
 
+    def push_front(self, item):
+        if isinstance(item, TokenList):
+            self._pre = item._data + self._pre
+        else:
+            self._pre.insert(0, item)
+
     def keep_last_one(self):
         self.clear(len(self) - 1)
 
@@ -68,48 +75,112 @@ class TokenGenerator:
         return self._indent
 
 
+def _temp_generator():
+    i = 0
+    while True:
+        i += 1
+        yield f"_pysht_{i}_"
+
+
+temp_name = _temp_generator()
+
+
 class TokenList:
-    def __init__(self, *data):
-        self.data = list(data)
+    Exec = 1
+    Filter = 2
+    Normal = 3
+    FULL = 4
+
+    def __init__(self, data, indent, type):
+        self._data = list(data)
+        self._var_name = None
+        self._indent = indent
+        self._last_var_name = None
+        self._generated_name = False
+        self.type = type
 
     def push_front(self, data):
         assert isinstance(data, (list, TokenList))
-        start = self.data[0].start
+        start = self._data[0].start
+        self._data[0].start = (0, 0)
         if isinstance(data, list):
-            self.data = data + self.data
+            self._data = data + self._data
         elif isinstance(data, TokenList):
-            self.data = data.data + self.data
-        self.data[0].start = start
+            self._data = data._data + self._data
+        self._data[0].start = start
         return self
 
     def push_back(self, data):
         assert isinstance(data, (list, TokenList))
-        end = self.data[-1].end
+        end = self._data[-1].end
+        self._data[-1].end = (0, 0)
         if isinstance(data, list):
-            self.data = self.data + data
+            self._data = self._data + data
         else:
-            self.data = self.data + data.data
-        self.data[-1].end = end
+            self._data = self._data + data._data
+        self._data[-1].end = end
         return self
 
-    def push_line(self, newline: 'TokenList', indent):
-        self.push_back([Token(tokenize.INDENT, '\t')] * indent)
+    def push_line(self, newline: 'TokenList'):
+        self.push_back([Token(tokenize.INDENT, '\t')] * self.indent)
         self.push_back(newline)
         return self
 
     def eol(self):
-        self.data.append(Token(tokenize.NEWLINE, '\n'))
+        self._data.append(Token(tokenize.NEWLINE, '\n'))
         return self
 
     def newline(self):
-        for x in self.data:
+        for x in self._data:
             x.start = (0, 0)
         return self
 
     def __iter__(self):
-        return iter(self.data)
+        return iter(self._data)
 
     def __getitem__(self, item: int):
-        return self.data[item]
+        return self._data[item]
 
+    @property
+    def var_name(self):
+        if not self._var_name:
+            self.generate_name()
+        if not self._last_var_name:
+            self._last_var_name = self._var_name
+        return self._var_name
+
+    def generate_name(self):
+        self._var_name = next(temp_name)
+        self._generated_name = True
+
+    @var_name.setter
+    def var_name(self, value):
+        self._var_name = value
+        if self._last_var_name is None:
+            self._last_var_name = value
+
+    @property
+    def have_name(self):
+        return self._var_name is not None
+
+    @property
+    def indent(self):
+        return self._indent
+
+    @indent.setter
+    def indent(self, value):
+        self._indent = value
+
+    @property
+    def last_var_name(self):
+        return self._last_var_name
+
+    @last_var_name.setter
+    def last_var_name(self, value):
+        # print("set last var name " + value)
+        self._last_var_name = value
+
+    @property
+    def generated_name(self):
+        return self._generated_name
 
