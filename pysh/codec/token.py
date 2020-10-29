@@ -1,5 +1,23 @@
 import tokenize
 from typing import List, Generator, TypeVar, NewType
+import logging as log
+
+
+def _search_indents(line):
+    indents = 0
+    spaces = 0
+    for c in line:
+        if c == '\t':
+            indents += 1
+        elif c == ' ':
+            if spaces == 3:
+                indents += 1
+                spaces = 0
+            else:
+                spaces += 1
+        else:
+            assert False
+    return indents
 
 
 class Token:
@@ -35,6 +53,37 @@ class Token:
         return str(self)
 
 
+class Line:
+    def __init__(self):
+        self._data: List[Token] = []
+        self._indent = 0
+
+    def add_token(self, token: Token):
+        if token.type not in (tokenize.INDENT, tokenize.DEDENT):
+            self._data.append(token)
+
+    @property
+    def indent(self):
+        return self._indent
+
+    # @indent.setter
+    # def indent(self, val):
+    #     self._indent = val
+
+    @property
+    def data(self):
+        return self._data
+
+    def __len__(self):
+        return len(self._data)
+
+    def __iter__(self):
+        return iter(self._data)
+
+    def __getitem__(self, item):
+        return self._data[item]
+
+
 class TokenGenerator:
     def __init__(self, tokens: Generator[tokenize.TokenInfo, None, None]):
         self._tokens = tokens
@@ -45,10 +94,15 @@ class TokenGenerator:
     def __getitem__(self, item: int) -> Token:
         while item >= len(self._pre):
             new = Token.from_tokenize(next(self._tokens))
-            if new.type == tokenize.NEWLINE:
-                self._indent = 0
-            elif new.type == tokenize.INDENT:
+            print(new)
+            # if new.type == tokenize.NEWLINE:
+            #     self._indent = 0
+            # elif new.type == tokenize.INDENT:
+            #     self._indent += _search_indents(new.value)
+            if new.type == tokenize.INDENT:
                 self._indent += 1
+            elif new.type == tokenize.DEDENT:
+                self._indent -= 1
             self._pre.append(new)
         return self._pre[item]
 
@@ -74,6 +128,17 @@ class TokenGenerator:
     def indent(self):
         return self._indent
 
+    def get_next_line(self):
+        i = 0
+        line = Line()
+        while True:
+            line.add_token(self[i])
+            if self[i].type in (tokenize.NEWLINE, tokenize.ENDMARKER):
+                break
+            i += 1
+        line._indent = self.indent
+        return line
+
 
 def _temp_generator():
     i = 0
@@ -90,6 +155,7 @@ class TokenList:
     Filter = 2
     Normal = 3
     FULL = 4
+    SWITCH = 5
 
     def __init__(self, data, indent, type):
         self._data = list(data)
@@ -106,18 +172,33 @@ class TokenList:
         if isinstance(data, list):
             self._data = data + self._data
         elif isinstance(data, TokenList):
-            self._data = data._data + self._data
+            # self._data = data._data + self._data
+            data.push_back(self)
+            self = data  # 魔鬼操作
         self._data[0].start = start
         return self
 
     def push_back(self, data):
         assert isinstance(data, (list, TokenList))
-        end = self._data[-1].end
-        self._data[-1].end = (0, 0)
+        if self._data:
+            end = self._data[-1].end
+            self._data[-1].end = (0, 0)
+        else:
+            end = (0, 0)
         if isinstance(data, list):
             self._data = self._data + data
         else:
-            self._data = self._data + data._data
+            # self._data = self._data + data._data
+            for i in range(len(data._data)):
+                x = data._data[i]
+                if data.indent > self._indent:
+                    self._data += [Token(tokenize.INDENT, '\t')] * (data.indent - self._indent)
+                if x.type == tokenize.NEWLINE:
+                    self._data.append(x)
+                    if i != len(data._data) - 1:
+                        self._data += [Token(tokenize.INDENT, '\t')] * max(data.indent - self._indent, 0)
+                else:
+                    self._data.append(x)
         self._data[-1].end = end
         return self
 
@@ -133,6 +214,7 @@ class TokenList:
     def newline(self):
         for x in self._data:
             x.start = (0, 0)
+            x.end = (0, 0)
         return self
 
     def __iter__(self):

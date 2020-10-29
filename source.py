@@ -1,3 +1,4 @@
+-> in
 a = f"123{abc}"
 	t =  e"ps -ef " | g"grep nginx" | balabala && e"a" || e"b" | Class
 e "ls -l"
@@ -11,3 +12,13 @@ for j in e'ls':
 ||
 abc | 1
 e"only one"
+
+if callable(lambda x: x + 1):
+	(lambda x: x + 1)(1)
+
+
+switch a:
+	1 -> laksjf
+		sfdasdf
+	[1, 2] -> print('1')
+print(000)
