@@ -1,13 +1,26 @@
 # token: type, value, (start), (end), line
 import tokenize
+from typing import List
+
 from .excepts import NoneOfMyBusiness
 from .token import Token, TokenGenerator, TokenList, temp_name
+from .token import Token, TokenGenerator, TokenList, Line
 
 
 def start(tokens):
     while True:
         try:
             res = statement(tokens)
+            for i in res:
+                yield i
+        except NoneOfMyBusiness:
+            for i in range(len(tokens)):
+                yield tokens[i]
+            tokens.clear()
+        except StopIteration:
+            return None
+        try:
+            res = check_switch(tokens)
             for i in res:
                 yield i
         except NoneOfMyBusiness:
@@ -145,3 +158,75 @@ def e_obj(tokens, not_first=False):
                 return tk
 
     raise NoneOfMyBusiness
+
+
+def check_case(line: Line):
+    condition: List[Token] = []
+    operate: List[Token] = []
+    con = True
+    for tk in line:
+        if con:
+            if tk.type == tokenize.OP and tk.value == '->':
+                con = False
+            else:
+                condition.append(tk)
+        else:
+            operate.append(tk)
+    return condition, operate
+
+
+def generate_case_condition(var, con: List[Token]):
+    if con[0].type == tokenize.OP and con[0].value == '==':
+        return [var] + con
+    if con[0].type == tokenize.OP and con[0].value == '(':
+        assert con[4].type == tokenize.OP and con[4].value == ')'
+        return [con[1], Token(tokenize.OP, '<'), var, Token(tokenize.OP, '>'), con[3]]
+    if con[0].type == tokenize.OP and con[0].value == '[':
+        assert con[4].type == tokenize.OP and con[4].value == ']'
+        return [con[1], Token(tokenize.OP, '<='), var, Token(tokenize.OP, '>='), con[3]]
+    # con[1](var)if callable(con[1])else con[1] == var
+    return [
+        Token(tokenize.NAME, 'check_switch_case_condition'),
+        Token(tokenize.OP, '('),
+        var,
+        Token(tokenize.OP, ','),
+        con[0],
+        Token(tokenize.OP, ')')
+    ]
+
+
+def check_switch(tokens: TokenGenerator):
+    first = tokens[0]
+    if first.type != tokenize.NAME or first.value != 'switch':
+        raise NoneOfMyBusiness()
+    switch_indent = tokens.indent
+    var = tokens[1]
+    # switch a:\n
+    assert var.type == tokenize.NAME and var.start[0] == first.start[0]
+    assert tokens[2].type == tokenize.OP and tokens[2].value == ':'
+    assert tokens[3].type == tokenize.NEWLINE
+    tokens.clear()
+    ans = TokenList([], switch_indent, TokenList.SWITCH)
+    while True:
+        line = tokens.get_next_line()
+        if line.indent == switch_indent + 1:
+            # case 语句
+            con, ope = check_case(line)
+            con = generate_case_condition(var, con)
+            ans.push_back([Token(tokenize.NAME, 'if ')] + con + [Token(tokenize.OP, ':'), Token(tokenize.NEWLINE, '\n')])
+            ans.push_back(TokenList(ope, switch_indent + 1, TokenList.SWITCH).newline())
+            tokens.clear()
+            while True:
+                line = tokens.get_next_line()
+                if line.indent >= switch_indent + 2:
+                    # case语句体
+                    ans.push_back(TokenList(line, switch_indent + 1, TokenList.SWITCH).newline())
+                    tokens.clear()
+                else:
+                    break
+        elif line.indent <= switch_indent:
+            break
+        else:
+            print("????" + str(line.indent))
+            break
+    return ans.newline()
