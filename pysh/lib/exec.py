@@ -9,12 +9,44 @@ import re
 
 
 class Filter:
-    def __init__(self, upstream: 'Exec', func: Callable[[subprocess.CompletedProcess], str]):
+    FUNC = 1
+    IF_SUCCESS = 2
+    IF_NOT_SUCCESS = 3
+    PIPE = 4
+
+    def __init__(self, type, upstream, func: Callable[[subprocess.CompletedProcess], str] = None):
         self.upstream = upstream
         self.func = func
+        self.type = type
 
     def __call__(self):
         return self.func(self.upstream.result())
+
+    def stdout(self):
+        return self()
+
+    def returncode(self):
+        return self.upstream.returncode()
+
+    def set_input(self, ano):
+        self.upstream = ano
+
+
+class RegexFilter(Filter):
+    def __init__(self, reg):
+        super().__init__(Filter.FUNC, None)
+
+        def _filter(result: subprocess.CompletedProcess):
+            pat = re.compile(reg)
+            res = pat.finditer(result.stdout)
+            return '\n'.join(map(lambda x: x if isinstance(x, str) else ' '.join(x), res))
+
+        self.func = _filter
+
+
+class FuncFilter(Filter):
+    def __init__(self, func):
+        super().__init__(Filter.FUNC, None, func)
 
 
 class Exec:
@@ -23,7 +55,7 @@ class Exec:
         RUNNING = 1
         FINISHED = 2
 
-    def __init__(self, cmd: str, input=None, capture_output=False, pre: List['Exec']=[]):
+    def __init__(self, cmd: str, input=None, capture_output=False, pre: List['Exec'] = []):
         self._cmd = cmd
         self._state = Exec.State.NOT_START
         self._result = None
@@ -35,8 +67,21 @@ class Exec:
         self._state = Exec.State.RUNNING
         if self._input is None:
             input_str = self._input
-        elif isinstance(self._input, Exec):
-            input_str = self._input.stdout()
+        elif isinstance(self._input, Filter):
+            if self._input.type == Filter.PIPE:
+                input_str = self._input.upstream.stdout()
+            elif self._input.type == Filter.FUNC:
+                input_str = self._input()
+            elif self._input.type == Filter.IF_SUCCESS:
+                if self._input.upstream.returncode() != 0:
+                    return None
+                input_str = None
+            elif self._input.type == Filter.IF_NOT_SUCCESS:
+                if self._input.upstream.returncode() == 0:
+                    return None
+                input_str = None
+            else:
+                input_str = None
         elif isinstance(self._input, str):
             input_str = self._input
         else:
@@ -70,6 +115,11 @@ class Exec:
         self.join()
         return self._result.stderr
 
+    def returncode(self):
+        self.exec()
+        self.join()
+        return self._result.returncode
+
     def result(self):
         self.exec()
         self.join()
@@ -90,7 +140,8 @@ class Exec:
     def __or__(self, other):
         if isinstance(other, Exec):
             # 管道传递
-            other._input = self
+            # other._input = self
+            other._input = Filter(Filter.PIPE, self)
             return other
         elif isinstance(other, str):
             # 正则过滤
@@ -98,11 +149,21 @@ class Exec:
                 pat = re.compile(other)
                 res = pat.finditer(result.stdout)
                 return '\n'.join(map(lambda x: x if isinstance(x, str) else ' '.join(x), res))
-            other._input = Filter(self, _filter)
+
+            other._input = Filter(Filter.FUNC, self, _filter)
         elif callable(other):
-            other._input = Filter(self, other)
+            other._input = Filter(Filter.FUNC, self, other)
 
     def __ror__(self, other):
         if isinstance(other, (str, Exec)):
             self._input = other
         return self
+
+    def run_if_not_success(self, ano: 'Exec'):
+        self._input = Filter(Filter.IF_NOT_SUCCESS, ano)
+
+    def run_if_success(self, ano: 'Exec'):
+        self._input = Filter(Filter.IF_SUCCESS, ano)
+
+    def set_input(self, ano):
+        self._input = ano

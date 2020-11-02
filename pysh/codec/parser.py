@@ -8,27 +8,19 @@ from .token import Token, TokenGenerator, TokenList, Line
 
 
 def start(tokens):
+    ops = [statement, check_switch]
     while True:
-        try:
-            res = statement(tokens)
-            for i in res:
-                yield i
-        except NoneOfMyBusiness:
-            for i in range(len(tokens)):
-                yield tokens[i]
-            tokens.clear()
-        except StopIteration:
-            return None
-        try:
-            res = check_switch(tokens)
-            for i in res:
-                yield i
-        except NoneOfMyBusiness:
-            for i in range(len(tokens)):
-                yield tokens[i]
-            tokens.clear()
-        except StopIteration:
-            return None
+        for op in ops:
+            try:
+                res = op(tokens)
+                for i in res:
+                    yield i
+            except NoneOfMyBusiness:
+                for i in range(len(tokens)):
+                    yield tokens[i]
+                tokens.clear()
+            except StopIteration:
+                return None
 
 
 def statement(tokens: TokenGenerator, not_first=False):
@@ -129,7 +121,7 @@ def e_obj(tokens, not_first=False):
                 tk_func = Token(tokenize.NAME, "Exec", start=first.start)
                 second.value = 'f' + second.value
             elif first.value == 'g':
-                tk_func = Token(tokenize.NAME, "Filter", start=first.start)
+                tk_func = Token(tokenize.NAME, "RegexFilter", start=first.start)
             if tk_func:
                 tokens.clear()
                 tk = TokenList([
@@ -213,7 +205,7 @@ def check_switch(tokens: TokenGenerator):
             # case 语句
             con, ope = check_case(line)
             con = generate_case_condition(var, con)
-            ans.push_back([Token(tokenize.NAME, 'if')] + con + [Token(tokenize.OP, ':'), Token(tokenize.NEWLINE, '\n')])
+            ans.push_back([Token(tokenize.NAME, 'if ')] + con + [Token(tokenize.OP, ':'), Token(tokenize.NEWLINE, '\n')])
             ans.push_back(TokenList(ope, switch_indent + 1, TokenList.SWITCH).newline())
             tokens.clear()
             while True:
