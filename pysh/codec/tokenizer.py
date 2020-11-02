@@ -17,7 +17,7 @@ def pysh_untokenize(tokens):
     parts = []
     prev_row = 1
     prev_col = 0
-
+    last = None
     for token in tokens:
         ttype, tvalue, tstart, tend, tline = token.to_token()
         row, col = tstart
@@ -25,7 +25,10 @@ def pysh_untokenize(tokens):
         # Add whitespace
         col_offset = col - prev_col
         if col_offset > 0:
-            parts.append(" " * col_offset)
+            # parts.append(" " * col_offset)
+            parts.append(' ')
+        # elif last and (last.type, token.type) in (tokenize.NAME, tokenize.NUMBER):
+        #     parts.append(' ')
 
         parts.append(tvalue)
         prev_row, prev_col = tend
@@ -33,6 +36,7 @@ def pysh_untokenize(tokens):
         if ttype in (tokenize.NL, tokenize.NEWLINE):
             prev_row += 1
             prev_col = 0
+        last = token
     return ''.join(parts)
 
 

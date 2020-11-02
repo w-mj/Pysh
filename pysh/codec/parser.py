@@ -213,7 +213,7 @@ def check_switch(tokens: TokenGenerator):
             # case 语句
             con, ope = check_case(line)
             con = generate_case_condition(var, con)
-            ans.push_back([Token(tokenize.NAME, 'if ')] + con + [Token(tokenize.OP, ':'), Token(tokenize.NEWLINE, '\n')])
+            ans.push_back([Token(tokenize.NAME, 'if')] + con + [Token(tokenize.OP, ':'), Token(tokenize.NEWLINE, '\n')])
             ans.push_back(TokenList(ope, switch_indent + 1, TokenList.SWITCH).newline())
             tokens.clear()
             while True:

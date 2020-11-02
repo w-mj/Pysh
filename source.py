@@ -16,9 +16,10 @@ e"only one"
 if callable(lambda x: x + 1):
 	(lambda x: x + 1)(1)
 
+a = 1.5
 
 switch a:
-	1 -> laksjf
-		sfdasdf
+	1 -> laksjf 3434
+		sfdasdf ttt
 	[1, 2] -> print('1')
 print(000)

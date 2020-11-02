@@ -189,10 +189,12 @@ class TokenList:
             self._data = self._data + data
         else:
             # self._data = self._data + data._data
+            first = True
             for i in range(len(data._data)):
                 x = data._data[i]
-                if data.indent > self._indent:
+                if first and data.indent > self._indent:
                     self._data += [Token(tokenize.INDENT, '\t')] * (data.indent - self._indent)
+                    first = False
                 if x.type == tokenize.NEWLINE:
                     self._data.append(x)
                     if i != len(data._data) - 1:
@@ -212,9 +214,12 @@ class TokenList:
         return self
 
     def newline(self):
+        if not self._data:
+            return
+        x_offset = self._data[0].start[1]
         for x in self._data:
-            x.start = (0, 0)
-            x.end = (0, 0)
+            x.start = (x.start[0], x.start[1] - x_offset)
+            x.end = (x.end[0], x.end[1] - x_offset)
         return self
 
     def __iter__(self):
