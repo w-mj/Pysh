@@ -13,30 +13,42 @@ def TK(token, value):
     return tokenize.TokenInfo(token, value, (0, 0), (0, 0), '')
 
 
+out = open('err.txt', 'w')
 def pysh_untokenize(tokens):
     parts = []
     prev_row = 1
     prev_col = 0
     last = None
+    indent = 0
     for token in tokens:
         ttype, tvalue, tstart, tend, tline = token.to_token()
+        print(token, file=out)
         row, col = tstart
+
+        # if last and last.type in (tokenize.NEWLINE, tokenize.NL):
+        #     parts.append('\t' * indent)
+        # if ttype == tokenize.INDENT:
+        #     indent += 1
+        # elif ttype == tokenize.DEDENT:
+        #     indent -= 1
 
         # Add whitespace
         col_offset = col - prev_col
         if col_offset > 0:
-            # parts.append(" " * col_offset)
-            parts.append(' ')
+            parts.append(" " * col_offset)
+            # parts.append(' ')
         # elif last and (last.type, token.type) in (tokenize.NAME, tokenize.NUMBER):
         #     parts.append(' ')
 
+        # if ttype not in (tokenize.INDENT, tokenize.DEDENT):
         parts.append(tvalue)
         prev_row, prev_col = tend
 
         if ttype in (tokenize.NL, tokenize.NEWLINE):
             prev_row += 1
             prev_col = 0
-        last = token
+        if ttype not in (tokenize.INDENT, tokenize.DEDENT):
+            last = token
     return ''.join(parts)
 
 

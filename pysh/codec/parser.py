@@ -5,20 +5,33 @@ from typing import List
 from .excepts import NoneOfMyBusiness
 from .token import Token, TokenGenerator, TokenList, temp_name
 from .token import Token, TokenGenerator, TokenList, Line
-
+from .parser2 import start as st2
 
 def start(tokens):
-    ops = [statement, check_switch]
+    ops = [st2, check_switch]
+    sss = 0
     while True:
-        for op in ops:
+        for i in range(len(ops)):
+            op = ops[i]
             try:
                 res = op(tokens)
+                sss = 0
                 for i in res:
                     yield i
             except NoneOfMyBusiness:
-                for i in range(len(tokens)):
-                    yield tokens[i]
-                tokens.clear()
+                sss += 1
+                if sss == len(ops):
+                    for i in range(len(tokens)):
+                        yield tokens[i]
+                    tokens.clear()
+                    sss = 0
+                else:
+                    continue
+                # if i < len(ops) - 1:
+                #     continue
+                # for i in range(len(tokens)):
+                #     yield tokens[i]
+                # tokens.clear()
             except StopIteration:
                 return None
 

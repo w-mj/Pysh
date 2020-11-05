@@ -3,6 +3,8 @@ from typing import List, Generator, TypeVar, NewType
 import logging as log
 
 
+out = open('out.txt', 'w')
+
 def _search_indents(line):
     indents = 0
     spaces = 0
@@ -22,7 +24,9 @@ def _search_indents(line):
 
 class Token:
 
-    def __init__(self, type, value, start=(0, 0), end=(0, 0), line=None):
+    def __init__(self, type, value:str, start=(0, 0), end=(0, 0), line=None):
+        assert not isinstance(value, Token)
+        assert value is not None
         self.type = type
         self.value = value
         self.start = start
@@ -31,7 +35,7 @@ class Token:
 
     @staticmethod
     def from_tokenize(token: tokenize.TokenInfo):
-        self = Token(None, None)
+        self = Token(None, '')
         self.type = token[0]
         self.value = token[1]
         self.start = token[2]
@@ -94,7 +98,7 @@ class TokenGenerator:
     def __getitem__(self, item: int) -> Token:
         while item >= len(self._pre):
             new = Token.from_tokenize(next(self._tokens))
-            print(new)
+            print(new, file=out)
             # if new.type == tokenize.NEWLINE:
             #     self._indent = 0
             # elif new.type == tokenize.INDENT:
@@ -133,7 +137,7 @@ class TokenGenerator:
         line = Line()
         while True:
             line.add_token(self[i])
-            if self[i].type in (tokenize.NEWLINE, tokenize.ENDMARKER):
+            if self[i].type in (tokenize.NEWLINE, tokenize.ENDMARKER, tokenize.NL):
                 break
             i += 1
         line._indent = self.indent
@@ -157,13 +161,22 @@ class TokenList:
     FULL = 4
     SWITCH = 5
 
-    def __init__(self, data, indent, type):
+    def __init__(self, data, indent, type=3):
         self._data = list(data)
         self._var_name = None
         self._indent = indent
         self._last_var_name = None
         self._generated_name = False
         self.type = type
+
+        last = None
+        for x in self._data:
+            if not last or last.type in (tokenize.NL, tokenize.NEWLINE):
+                if x.start[1] != indent * 4:
+                    x.start = (x.start[1], indent * 4)
+            last = x
+        # if self._data:
+        #     self._data = [Token(tokenize.INDENT, '    ' * indent, start=(data[0].start[0], 0), end=(data[0].end[0], 4 * indent))] + self._data
 
     def push_front(self, data):
         assert isinstance(data, (list, TokenList))
@@ -174,7 +187,8 @@ class TokenList:
         elif isinstance(data, TokenList):
             # self._data = data._data + self._data
             data.push_back(self)
-            self = data  # 魔鬼操作
+            # self = data  # 魔鬼操作
+            return data
         self._data[0].start = start
         return self
 
@@ -188,24 +202,25 @@ class TokenList:
         if isinstance(data, list):
             self._data = self._data + data
         else:
-            # self._data = self._data + data._data
-            first = True
-            for i in range(len(data._data)):
-                x = data._data[i]
-                if first and data.indent > self._indent:
-                    self._data += [Token(tokenize.INDENT, '\t')] * (data.indent - self._indent)
-                    first = False
-                if x.type == tokenize.NEWLINE:
-                    self._data.append(x)
-                    if i != len(data._data) - 1:
-                        self._data += [Token(tokenize.INDENT, '\t')] * max(data.indent - self._indent, 0)
-                else:
-                    self._data.append(x)
-        self._data[-1].end = end
+            self._data = self._data + data._data
+            # first = True
+            # for i in range(len(data._data)):
+            #     x = data._data[i]
+            #     if first and data.indent > self._indent:
+            #         self._data += [Token(tokenize.INDENT, '\t')] * (data.indent - self._indent)
+            #         first = False
+            #     if x.type == tokenize.NEWLINE:
+            #         self._data.append(x)
+            #         if i != len(data._data) - 1:
+            #             self._data += [Token(tokenize.INDENT, '\t')] * max(data.indent - self._indent, 0)
+            #     else:
+            #         self._data.append(x)
+        if self._data:
+            self._data[-1].end = end
         return self
 
     def push_line(self, newline: 'TokenList'):
-        self.push_back([Token(tokenize.INDENT, '\t')] * self.indent)
+        # self.push_back([Token(tokenize.INDENT, '\t')] * self.indent)
         self.push_back(newline)
         return self
 
