@@ -115,6 +115,7 @@ class ParseStatement:
     def generate_token_list(self, obj_type: int, pos: int) -> TokenList:
         if obj_type == self.E_STR:
             tk = Token(tokenize.NAME, 'Exec')
+            self._line[pos].value = self.generate_cmd_str(self._line[pos].value)
         elif obj_type == self.G_STR:
             tk = Token(tokenize.NAME, 'Filter')
         elif obj_type == self.NAME:
@@ -164,3 +165,47 @@ class ParseStatement:
         o_list_1.push_line(o_list_2).push_line(o_list_op)
         o_list_1.last_var_name = o_list_2.last_var_name
         return o_list_1
+
+    def generate_cmd_str(self, cmd: str):
+        res = "f"
+        state = 1
+        for x in cmd:
+            if state == 1:
+                if x == '$':
+                    state = 2
+                else:
+                    res += x
+            elif state == 2:
+                if x == '$':
+                    state = 1
+                    res += x
+                elif x == '{':
+                    state = 4
+                elif str.isdigit(x):
+                    state = 1
+                    res += f"${x}"
+                elif str.isalpha(x) or x == '_':
+                    state = 3
+                    res += f'{{generateParam({x}'
+                else:
+                    state = 1
+                    res += x
+            elif state == 3:
+                if str.isalnum(x) or x == '_':
+                    res += x
+                else:
+                    res += f')}}{x}'
+                    state = 1
+            elif state == 4:
+                assert x != '}'
+                res += f'{{generateParam({x}'
+                state = 5
+            elif state == 5:
+                if x == '}':
+                    state = 1
+                    res += ')}'
+                else:
+                    res += x
+        return res
+
+

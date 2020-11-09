@@ -4,3 +4,5 @@ dist
 pysh.egg-info
 __pycache__
 result.py
+err.txt
+out.txt

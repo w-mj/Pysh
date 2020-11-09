@@ -9,15 +9,18 @@ if 1:
     print(1)
 
 def f1():
-    t =  e"ps -ef " | g"grep nginx" | balabala && e"a" || e"b" | Class
+    t =  e"ps '-ef '" | g'grep "nginx"' | balabala && e"a" || e"b" | Class
     return t
 
 
 a = f"123{abc}"
 e "ls -l"
-asd = e"hahahaha"
-e = abc | e"asdasd" | e"bbaa"
+asd = e"hahahaha ${a} $1[1][2]"
+e = abc | "asdasd" | e"bbaa"
 Exec("ls -l")
+
+"input"| e"ps"
+
 for i in range(10):
     print(i)
 # for j in e'ls':

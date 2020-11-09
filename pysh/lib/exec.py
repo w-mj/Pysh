@@ -7,46 +7,7 @@ from pysh.config import Config
 import logging as log
 import re
 
-
-class Filter:
-    FUNC = 1
-    IF_SUCCESS = 2
-    IF_NOT_SUCCESS = 3
-    PIPE = 4
-
-    def __init__(self, type, upstream, func: Callable[[subprocess.CompletedProcess], str] = None):
-        self.upstream = upstream
-        self.func = func
-        self.type = type
-
-    def __call__(self):
-        return self.func(self.upstream.result())
-
-    def stdout(self):
-        return self()
-
-    def returncode(self):
-        return self.upstream.returncode()
-
-    def set_input(self, ano):
-        self.upstream = ano
-
-
-class RegexFilter(Filter):
-    def __init__(self, reg):
-        super().__init__(Filter.FUNC, None)
-
-        def _filter(result: subprocess.CompletedProcess):
-            pat = re.compile(reg)
-            res = pat.finditer(result.stdout)
-            return '\n'.join(map(lambda x: x if isinstance(x, str) else ' '.join(x), res))
-
-        self.func = _filter
-
-
-class FuncFilter(Filter):
-    def __init__(self, func):
-        super().__init__(Filter.FUNC, None, func)
+from pysh.lib.filter import Filter
 
 
 class Exec:
