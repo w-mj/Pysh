@@ -181,6 +181,9 @@ def check_case(line: Line):
 
 
 def generate_case_condition(var, con: List[Token]):
+    for x in con:
+        x.start = (0, 0)
+        x.end = (0, 0)
     if con[0].type == tokenize.OP and con[0].value == '==':
         return [var] + con
     if con[0].type == tokenize.OP and con[0].value == '(':
@@ -210,6 +213,8 @@ def check_switch(tokens: TokenGenerator):
     assert var.type == tokenize.NAME and var.start[0] == first.start[0]
     assert tokens[2].type == tokenize.OP and tokens[2].value == ':'
     assert tokens[3].type == tokenize.NEWLINE
+    var.start = (0, 0)
+    var.end = (0, 0)
     tokens.clear()
     ans = TokenList([], switch_indent, TokenList.SWITCH)
     while True:
@@ -219,13 +224,13 @@ def check_switch(tokens: TokenGenerator):
             con, ope = check_case(line)
             con = generate_case_condition(var, con)
             ans.push_back([Token(tokenize.NAME, 'if ')] + con + [Token(tokenize.OP, ':'), Token(tokenize.NEWLINE, '\n')])
-            ans.push_back(TokenList(ope, switch_indent + 1, TokenList.SWITCH).newline())
+            ans.push_back(TokenList(ope, switch_indent + 1, TokenList.SWITCH))
             tokens.clear()
             while True:
                 line = tokens.get_next_line()
                 if line.indent >= switch_indent + 2:
                     # case语句体
-                    ans.push_back(TokenList(line, switch_indent + 1, TokenList.SWITCH).newline())
+                    ans.push_back(TokenList(line, switch_indent + 1, TokenList.SWITCH))
                     tokens.clear()
                 else:
                     break
