@@ -13,6 +13,9 @@ def consume():
         a, b = line.split(' ')
         print(int(a) + int(b))
 
+def add(a, b):
+    print(int(a) + int(b))
+
 def hello():
     print("hello world")
 
@@ -22,12 +25,12 @@ def fail():
 
 
 if __name__ == '__main__':
-    test_chain = ["generate 10", "consume", "fail", "hello"]
+    test_chain = ["generate 10", "consume", "fail", "hello", "add $[2,0] $[2,1]"]
 
     test_cmd = ["python .\\test.py " + x for x in test_chain]
     if len(sys.argv) == 1:
         # python .\test.py g 10 | python .\test.py c
-        t = Exec(test_cmd[0]) | Exec(test_cmd[1])
+        t = Exec(test_cmd[0]) | Exec(test_cmd[4])
         print(t._cmd)
         print(t.stdout())
 

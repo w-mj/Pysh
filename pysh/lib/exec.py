@@ -56,8 +56,11 @@ class Exec:
             raise Exception(f"type {type(self._input)} is not supported as input")
         log.debug("start run " + self._cmd)
         log.debug("with input " + str(input_str))
+        self._cmd = self._parse_exec_cmd(self._cmd, self._input)
         self._result = subprocess.run(self._cmd, input=input_str, capture_output=True)
         self._state = Exec.State.FINISHED
+        if self._result.returncode != 0:
+            log.info(self._result.stderr.decode())
         log.debug("end run " + self._cmd)
         # log.debug("stdout is " + self.stdout().decode())
 
@@ -144,14 +147,20 @@ class Exec:
                 self._lines = None
                 self._arr = None
 
-            def __getitem__(self, i, j=None):
+            def __getitem__(self, item):
+                if isinstance(item, int):
+                    i = item
+                    j = None
+                else:
+                    i, j = item
                 if j is None:
                     if self._lines is None:
-                        self._lines = self._input.stdout().split('\n')
+                        self._lines = self._input.stdout().decode().split('\n')
                         self._arr = [None for _ in self._lines]
                     return self._lines[i]
-                if self._arr[i] is None:
-                    self._arr[i] = self[i].split()
+                if self._arr is None or self._arr[i] is None:
+                    line = self[i].split()
+                    self._arr[i] = line
                 return self._arr[i][j]
 
         arr = CmdArr(input)
