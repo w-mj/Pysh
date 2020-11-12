@@ -14,6 +14,7 @@ class Filter:
         self.upstream = upstream
         self.func = func
         self.type = type
+        self._stdout = None
 
     def __call__(self):
         if self.upstream:
@@ -21,7 +22,13 @@ class Filter:
         return self.func(None)
 
     def stdout(self):
-        return self()
+        if self._stdout:
+            return self._stdout
+        if self.type in (self.FUNC, self.FILTER):
+            self._stdout = self()
+        else:
+            self._stdout = self.upstream.stdout()
+        return self._stdout
 
     def returncode(self):
         return self.upstream.returncode()

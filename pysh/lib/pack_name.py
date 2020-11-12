@@ -1,4 +1,5 @@
-from pysh.lib.exec import Exec, RegexFilter, FuncFilter
+from pysh.lib.exec import Exec
+from pysh.lib.filter import RegexFilter, FuncFilter
 
 def PackName(obj):
     if isinstance(obj, Exec):

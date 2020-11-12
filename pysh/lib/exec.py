@@ -15,6 +15,7 @@ class Exec:
         NOT_START = 0
         RUNNING = 1
         FINISHED = 2
+        NOT_RUN = 3
 
     def __init__(self, cmd: str, input=None, capture_output=False, pre: List['Exec'] = []):
         self._cmd = cmd
@@ -29,16 +30,22 @@ class Exec:
         if self._input is None:
             input_str = self._input
         elif isinstance(self._input, Filter):
-            if self._input.type == Filter.PIPE:
-                input_str = self._input.upstream.stdout()
-            elif self._input.type == Filter.FUNC:
-                input_str = self._input()
+            if self._input.type in (Filter.PIPE, Filter.FUNC, Filter.FILTER):
+                if self._input.returncode() != 0:
+                    self._state = self.State.NOT_RUN
+                    self._result = subprocess.CompletedProcess(self._cmd, self._input.upstream.returncode())
+                    return None
+                input_str = self._input.stdout()
             elif self._input.type == Filter.IF_SUCCESS:
                 if self._input.upstream.returncode() != 0:
+                    self._state = self.State.NOT_RUN
+                    self._result = subprocess.CompletedProcess(self._cmd, self._input.upstream.returncode())
                     return None
                 input_str = None
             elif self._input.type == Filter.IF_NOT_SUCCESS:
                 if self._input.upstream.returncode() == 0:
+                    self._state = self.State.NOT_RUN
+                    self._result = subprocess.CompletedProcess(self._cmd, self._input.upstream.returncode())
                     return None
                 input_str = None
             else:
@@ -52,6 +59,7 @@ class Exec:
         self._result = subprocess.run(self._cmd, input=input_str, capture_output=True)
         self._state = Exec.State.FINISHED
         log.debug("end run " + self._cmd)
+        # log.debug("stdout is " + self.stdout().decode())
 
     def exec(self):
         if self._state != Exec.State.NOT_START:
@@ -63,7 +71,7 @@ class Exec:
             self.__exec_func()
 
     def join(self):
-        while self._state != Exec.State.FINISHED:
+        while self._state not in (Exec.State.FINISHED, Exec.State.NOT_RUN):
             pass
 
     def stdout(self):
@@ -128,3 +136,66 @@ class Exec:
 
     def set_input(self, ano):
         self._input = ano
+
+    def _parse_exec_cmd(self, cmd, input: Filter):
+        class CmdArr:
+            def __init__(self, input):
+                self._input = input
+                self._lines = None
+                self._arr = None
+
+            def __getitem__(self, i, j=None):
+                if j is None:
+                    if self._lines is None:
+                        self._lines = self._input.stdout().split('\n')
+                        self._arr = [None for _ in self._lines]
+                    return self._lines[i]
+                if self._arr[i] is None:
+                    self._arr[i] = self[i].split()
+                return self._arr[i][j]
+
+        arr = CmdArr(input)
+        ans = ''
+        state = 0
+        i = None
+        j = None
+        for x in cmd:
+            if state == 0:
+                if x == '$':
+                    state = 1
+                else:
+                    ans += x
+            elif state == 1:
+                if x == '$':
+                    ans += '$'
+                    state = 0
+                elif x == '[':
+                    state = 2
+                    i = 0
+                else:
+                    ans += f'${x}'
+                    state = 0
+            elif state == 2:
+                if str.isdigit(x):
+                    i = i * 10 + int(x)
+                elif x == ',':
+                    j = 0
+                    state = 3
+                elif x == ']':
+                    ans += arr[i]
+                    state = 0
+                elif x == ' \t':
+                    pass
+                else:
+                    raise RuntimeError("2222")
+            elif state == 3:
+                if str.isdigit(x):
+                    j = j * 10 + int(x)
+                elif x == ']':
+                    ans += arr[i, j]
+                    state = 0
+                elif x in ' \t':
+                    pass
+                else:
+                    raise RuntimeError("3333")
+        return ans
