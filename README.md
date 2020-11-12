@@ -180,7 +180,3 @@ e-obj -> [e|g]<str> | <e-tuple>
 oper -> | && || ~
 e->tuple -> e<str>{,e<str>}
 ```
-
-```
-
-```
