@@ -139,7 +139,7 @@ class ParseStatement:
         elif op == self.AND:
             tk = Token(tokenize.NAME, 'run_if_success')
         elif op == self.OR:
-            tk = Token(tokenize.NAME, 'run_if_not_success')
+            tk = Token(tokenize.NAME, 'run_if_fail')
         elif op == self.STREAM:
             tk = Token(tokenize.NAME, 'set_stream_input')
         else:

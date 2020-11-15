@@ -6,7 +6,7 @@ from typing import Callable, Optional
 class Filter:
     FUNC = 1
     IF_SUCCESS = 2
-    IF_NOT_SUCCESS = 3
+    IF_FAIL = 3
     PIPE = 4
     FILTER = 5
 

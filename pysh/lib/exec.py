@@ -1,13 +1,13 @@
 import subprocess
 import enum
 import threading
-from typing import List, Callable
+from typing import List, Callable, Union, Optional
 
 from pysh.config import Config
 import logging as log
 import re
 
-from pysh.lib.filter import Filter
+from pysh.lib.filter import Filter, RegexFilter, FuncFilter
 
 
 class Exec:
@@ -42,7 +42,7 @@ class Exec:
                     self._result = subprocess.CompletedProcess(self._cmd, self._input.upstream.returncode())
                     return None
                 input_str = None
-            elif self._input.type == Filter.IF_NOT_SUCCESS:
+            elif self._input.type == Filter.IF_FAIL:
                 if self._input.upstream.returncode() == 0:
                     self._state = self.State.NOT_RUN
                     self._result = subprocess.CompletedProcess(self._cmd, self._input.upstream.returncode())
@@ -131,8 +131,8 @@ class Exec:
             self._input = other
         return self
 
-    def run_if_not_success(self, ano: 'Exec'):
-        self._input = Filter(Filter.IF_NOT_SUCCESS, ano)
+    def run_if_fail(self, ano: 'Exec'):
+        self._input = Filter(Filter.IF_FAIL, ano)
 
     def run_if_success(self, ano: 'Exec'):
         self._input = Filter(Filter.IF_SUCCESS, ano)
@@ -208,3 +208,20 @@ class Exec:
                 else:
                     raise RuntimeError("3333")
         return ans
+
+    def pipe_to(self, ano: Union["Filter", "Exec", str, Callable[[Optional[subprocess.CompletedProcess]], str]]):
+        if isinstance(ano, str):
+            ano = RegexFilter(ano)
+        elif callable(ano):
+            ano = FuncFilter(ano)
+        ano.set_input(self)
+        return ano
+
+    def if_success(self, ano: "Exec"):
+        ano.run_if_success(self)
+        return ano
+
+    def if_fail(self, ano: "Exec"):
+        ano.run_if_fail(self)
+        return ano
+
