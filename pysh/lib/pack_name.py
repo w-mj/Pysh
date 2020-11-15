@@ -8,3 +8,4 @@ def PackName(obj):
         return RegexFilter(obj)
     if callable(obj):
         return FuncFilter(obj)
+    return obj

@@ -10,6 +10,32 @@ import re
 from pysh.lib.filter import Filter, RegexFilter, FuncFilter
 
 
+class ResultTable:
+    def __init__(self, input):
+        self._input = input
+        self._lines = None
+        self._arr = None
+
+    def __getitem__(self, item):
+        if isinstance(item, int):
+            i = item
+            j = None
+        else:
+            i, j = item
+        if j is None:
+            if self._lines is None:
+                self._lines = self._input.stdout().decode().split('\n')
+                self._arr = [None for _ in self._lines]
+            return self._lines[i]
+        if self._arr is None or self._arr[i] is None:
+            line = self[i].split()
+            self._arr[i] = line
+        return self._arr[i][j]
+
+    def set_input(self, input):
+        self._input = input
+
+
 class Exec:
     class State(enum.Enum):
         NOT_START = 0
@@ -140,30 +166,8 @@ class Exec:
     def set_input(self, ano):
         self._input = ano
 
-    def _parse_exec_cmd(self, cmd, input: Filter):
-        class CmdArr:
-            def __init__(self, input):
-                self._input = input
-                self._lines = None
-                self._arr = None
-
-            def __getitem__(self, item):
-                if isinstance(item, int):
-                    i = item
-                    j = None
-                else:
-                    i, j = item
-                if j is None:
-                    if self._lines is None:
-                        self._lines = self._input.stdout().decode().split('\n')
-                        self._arr = [None for _ in self._lines]
-                    return self._lines[i]
-                if self._arr is None or self._arr[i] is None:
-                    line = self[i].split()
-                    self._arr[i] = line
-                return self._arr[i][j]
-
-        arr = CmdArr(input)
+    def _parse_exec_cmd(self, cmd, input: Union[Filter, 'Exec']):
+        arr = ResultTable(input)
         ans = ''
         state = 0
         i = None
@@ -224,4 +228,3 @@ class Exec:
     def if_fail(self, ano: "Exec"):
         ano.run_if_fail(self)
         return ano
-
