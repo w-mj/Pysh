@@ -45,7 +45,7 @@ class RegexFilter(Filter):
             if result is None:
                 return reg
             pat = re.compile(reg)
-            res = pat.finditer(result.stdout)
+            res = pat.findall(result.stdout().decode())
             return '\n'.join(map(lambda x: x if isinstance(x, str) else ' '.join(x), res))
 
         self.func = _filter

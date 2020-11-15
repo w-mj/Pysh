@@ -7,7 +7,6 @@ def generate(n):
     for i in range(int(n)):
         print(f"{i} {i+1}")
 
-
 def consume():
     for line in stdin:
         a, b = line.split(' ')
