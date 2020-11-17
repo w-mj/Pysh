@@ -3,6 +3,7 @@ import enum
 import threading
 from typing import List, Callable, Union, Optional
 
+from lib.FakeFile import RealFile, FakeFile
 from pysh.config import Config
 import logging as log
 import re
@@ -37,14 +38,11 @@ class ResultTable:
 
 
 class Exec(Filter):
-    class State(enum.Enum):
-        NOT_START = 0
-        RUNNING = 1
-        FINISHED = 2
-        NOT_RUN = 3
 
-    def __init__(self, cmd: str, upstream=None, capture_output=False, pre: List['Exec'] = []):
+    def __init__(self, cmd: str, upstream=None, capture_output=False, pre=None):
         super().__init__(Filter.PIPE, upstream)
+        if pre is None:
+            pre = []
         self._cmd = cmd
         self._state = Exec.State.NOT_START
         self._result = None
@@ -55,51 +53,66 @@ class Exec(Filter):
 
     def __exec_func(self):
         self._state = Exec.State.RUNNING
-        if self._upstream is None:
-            input_str = self._upstream
-        elif isinstance(self._upstream, Filter):
-            if self._upstream.type in (Filter.PIPE, Filter.FUNC, Filter.FILTER):
-                if self._upstream.returncode() != 0:
-                    log.debug(f"pipe upstream ({self._upstream}) fail")
-                    self._state = self.State.NOT_RUN
-                    self._result = self._upstream.result()
-                    return None
-                input_str = self._upstream.stdout()
-            elif self._upstream.type == Filter.IF_SUCCESS:
-                if self._upstream._upstream.returncode() != 0:
-                    log.debug(f"logic and upstream ({self._upstream}) fail")
-                    self._state = self.State.NOT_RUN
-                    # self._result = subprocess.CompletedProcess(self._cmd, self._input.upstream.returncode())
-                    self._result = self._upstream.result()
-                    return None
+        input_file: FakeFile = self._upstream.outfile() if self._stream else None
+        if not input_file:
+            if self._upstream is None:
                 input_str = None
-            elif self._upstream.type == Filter.IF_FAIL:
-                if self._upstream._upstream.returncode() == 0:
-                    log.debug(f"logic or upstream ({self._upstream}) success")
-                    self._state = self.State.NOT_RUN
-                    # self._result = subprocess.CompletedProcess(self._cmd, self._input.upstream.returncode())
-                    self._result = self._upstream.result()
-                    return None
-                input_str = None
+            elif isinstance(self._upstream, Filter):
+                if self._upstream.type in (Filter.PIPE, Filter.FUNC, Filter.FILTER):
+                    if self._upstream.returncode() != 0:
+                        log.debug(f"pipe upstream ({self._upstream}) fail")
+                        self._state = self.State.NOT_RUN
+                        self._result = self._upstream.result()
+                        return None
+                    input_str = self._upstream.stdout()
+                elif self._upstream.type == Filter.IF_SUCCESS:
+                    if self._upstream._upstream.returncode() != 0:
+                        log.debug(f"logic and upstream ({self._upstream}) fail")
+                        self._state = self.State.NOT_RUN
+                        # self._result = subprocess.CompletedProcess(self._cmd, self._input.upstream.returncode())
+                        self._result = self._upstream.result()
+                        return None
+                    input_str = None
+                elif self._upstream.type == Filter.IF_FAIL:
+                    if self._upstream._upstream.returncode() == 0:
+                        log.debug(f"logic or upstream ({self._upstream}) success")
+                        self._state = self.State.NOT_RUN
+                        # self._result = subprocess.CompletedProcess(self._cmd, self._input.upstream.returncode())
+                        self._result = self._upstream.result()
+                        return None
+                    input_str = None
+                else:
+                    input_str = None
+            elif isinstance(self._upstream, (str, bytes)):
+                input_str = self._upstream
             else:
-                input_str = None
-        elif isinstance(self._upstream, (str, bytes)):
-            input_str = self._upstream
+                raise Exception(f"type {type(self._upstream)} is not supported as input")
+            log.debug("start run " + self._cmd)
+            log.debug("with input " + str(input_str))
+            self._cmd = self._parse_exec_cmd(self._cmd, self._upstream)
+            self._process = subprocess.Popen(self._cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            if isinstance(input_str, str):
+                input_str = input_str.encode()
+            if input_str:
+                self._process.stdin.write(input_str)
         else:
-            raise Exception(f"type {type(self._upstream)} is not supported as input")
-        log.debug("start run " + self._cmd)
-        log.debug("with input " + str(input_str))
-        self._cmd = self._parse_exec_cmd(self._cmd, self._upstream)
-        self._process = subprocess.Popen(self._cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        if isinstance(input_str, str):
-            input_str = input_str.encode()
-        if input_str:
-            self._process.stdin.write(input_str)
-        # self._state = Exec.State.FINISHED
-        # if self._result.returncode != 0:
-        #     log.info(self._result.stderr.decode())
-        # log.debug("end run " + self._cmd)
-        # log.debug("stdout is " + self.stdout().decode())
+            # 流
+            log.debug("start run stream " + self._cmd)
+            self._process = subprocess.Popen(self._cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+            def _pass():
+                while True:
+                    line = input_file.readline()
+                    if line in ('', b''):
+                        self._state = Exec.State.FINISHED
+                        break
+                    if isinstance(line, str):
+                        line = line.encode()
+                    self._process.stdin.write(line)
+                    self._process.stdin.flush()
+                    log.debug(f"write {line} to process")
+                log.debug("quit thread")
+            threading.Thread(target=_pass).start()
 
     def exec(self):
         if self._state != Exec.State.NOT_START:
@@ -115,7 +128,17 @@ class Exec(Filter):
         #     pass
         if self._result:
             return
-        stdout, stderr = self._process.communicate()
+        if self._upstream:
+            self._upstream.join()
+        # stdout, stderr = self._process.communicate()
+        self._process.stdin.close()
+        retc = None
+        while retc is None:
+            retc = self._process.poll()
+        log.debug(f"process {self._process.pid} finish with " + str(retc))
+        stdout = self._process.stdout.read()
+        stderr = self._process.stderr.read()
+        # log.debug("process finish with " + str(retc))
         self._result = subprocess.CompletedProcess(self._cmd, self._process.returncode, stdout, stderr)
         self._state = self.State.FINISHED
 
@@ -144,11 +167,21 @@ class Exec(Filter):
         return self._state
 
     @property
+    def process(self):
+        return self._process
+
+    @property
     def input(self):
         return self._upstream
 
+    def outfile(self):
+        if self._state == Exec.State.NOT_START:
+            self.exec()
+        return RealFile(self._process.stdout)
+
     def __or__(self, other):
-        return self.set_input(other)
+        other.set_input(self)
+        return other
 
     def __ror__(self, other):
         if isinstance(other, (str, Exec)):
@@ -162,24 +195,7 @@ class Exec(Filter):
         self._upstream = Filter(Filter.IF_SUCCESS, ano)
 
     def set_input(self, other):
-        if isinstance(other, Filter):
-            # 管道传递
-            # other._input = self
-            other._upstream = Filter(Filter.PIPE, self)
-            return other
-        elif isinstance(other, str):
-            # 正则过滤
-            def _filter(result: subprocess.CompletedProcess):
-                pat = re.compile(other)
-                res = pat.finditer(result.stdout)
-                return '\n'.join(map(lambda x: x if isinstance(x, str) else ' '.join(x), res))
-
-            other = FuncFilter(_filter, self)
-        elif callable(other):
-            other = FuncFilter(other, self)
-        else:
-            raise RuntimeError("Unsupported type " + other)
-
+        self._upstream = other
         return other
 
     def _parse_exec_cmd(self, cmd, input: Union[Filter, 'Exec']):
