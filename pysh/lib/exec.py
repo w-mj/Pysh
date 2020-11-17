@@ -47,6 +47,7 @@ class Exec:
         self._cmd = cmd
         self._state = Exec.State.NOT_START
         self._result = None
+        self._process = None
         self._input = input
         self._capture_output = capture_output
         self._pre = pre
@@ -58,36 +59,45 @@ class Exec:
         elif isinstance(self._input, Filter):
             if self._input.type in (Filter.PIPE, Filter.FUNC, Filter.FILTER):
                 if self._input.returncode() != 0:
+                    log.debug(f"pipe upstream ({self._input}) fail")
                     self._state = self.State.NOT_RUN
-                    self._result = subprocess.CompletedProcess(self._cmd, self._input.upstream.returncode())
+                    self._result = self._input.result()
                     return None
                 input_str = self._input.stdout()
             elif self._input.type == Filter.IF_SUCCESS:
                 if self._input.upstream.returncode() != 0:
+                    log.debug(f"logic and upstream ({self._input}) fail")
                     self._state = self.State.NOT_RUN
-                    self._result = subprocess.CompletedProcess(self._cmd, self._input.upstream.returncode())
+                    # self._result = subprocess.CompletedProcess(self._cmd, self._input.upstream.returncode())
+                    self._result = self._input.result()
                     return None
                 input_str = None
             elif self._input.type == Filter.IF_FAIL:
                 if self._input.upstream.returncode() == 0:
+                    log.debug(f"logic or upstream ({self._input}) success")
                     self._state = self.State.NOT_RUN
-                    self._result = subprocess.CompletedProcess(self._cmd, self._input.upstream.returncode())
+                    # self._result = subprocess.CompletedProcess(self._cmd, self._input.upstream.returncode())
+                    self._result = self._input.result()
                     return None
                 input_str = None
             else:
                 input_str = None
-        elif isinstance(self._input, str):
+        elif isinstance(self._input, (str, bytes)):
             input_str = self._input
         else:
             raise Exception(f"type {type(self._input)} is not supported as input")
         log.debug("start run " + self._cmd)
         log.debug("with input " + str(input_str))
         self._cmd = self._parse_exec_cmd(self._cmd, self._input)
-        self._result = subprocess.run(self._cmd, input=input_str, capture_output=True)
-        self._state = Exec.State.FINISHED
-        if self._result.returncode != 0:
-            log.info(self._result.stderr.decode())
-        log.debug("end run " + self._cmd)
+        self._process = subprocess.Popen(self._cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if isinstance(input_str, str):
+            input_str = input_str.encode()
+        if input_str:
+            self._process.stdin.write(input_str)
+        # self._state = Exec.State.FINISHED
+        # if self._result.returncode != 0:
+        #     log.info(self._result.stderr.decode())
+        # log.debug("end run " + self._cmd)
         # log.debug("stdout is " + self.stdout().decode())
 
     def exec(self):
@@ -100,8 +110,13 @@ class Exec:
             self.__exec_func()
 
     def join(self):
-        while self._state not in (Exec.State.FINISHED, Exec.State.NOT_RUN):
-            pass
+        # while self._state not in (Exec.State.FINISHED, Exec.State.NOT_RUN):
+        #     pass
+        if self._result:
+            return
+        stdout, stderr = self._process.communicate()
+        self._result = subprocess.CompletedProcess(self._cmd, self._process.returncode, stdout, stderr)
+        self._state = self.State.FINISHED
 
     def stdout(self):
         self.exec()

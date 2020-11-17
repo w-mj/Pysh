@@ -29,6 +29,10 @@ if __name__ == '__main__':
     test_cmd = ["python .\\test.py " + x for x in test_chain]
     if len(sys.argv) == 1:
         # python .\test.py g 10 | python .\test.py c
+        t = Exec(test_cmd[0]) | Exec(test_cmd[1])
+        print(t._cmd)
+        print(t.stdout())
+
         t = Exec(test_cmd[0]) | Exec(test_cmd[4])
         print(t._cmd)
         print(t.stdout())

@@ -36,6 +36,15 @@ class Filter:
     def set_input(self, ano):
         self.upstream = ano
 
+    def result(self):
+        return self.upstream.result()
+
+    def __str__(self):
+        return str(self.result())
+
+    def __repr__(self):
+        return str(self)
+
 
 class RegexFilter(Filter):
     def __init__(self, reg):
