@@ -1,4 +1,4 @@
-# `aaa`
+# coding:pysh
 from pysh.lib.exec import Exec
 if 1:
     print(1)
