@@ -253,6 +253,10 @@ class Exec(Filter):
         ano.set_input(self)
         return ano
 
+    def stream_to(self, ano):
+        ano.set_stream(self)
+        return ano
+
     def if_success(self, ano: "Exec"):
         ano.run_if_success(self)
         return ano

@@ -4,7 +4,7 @@ from typing import Callable, Optional, Union
 
 import enum
 
-from lib.FakeFile import FilterFile
+from lib.FakeFile import FilterFile, FakeFile
 
 
 class Filter:
@@ -79,7 +79,18 @@ class FuncFilter(Filter):
 
     def stdout(self):
         if not self._stdout:
-            self._stdout = self(self._upstream.result())
+            if not self._stream:
+                self._stdout = self(self._upstream.result())
+            else:
+                res = []
+                file = self.outfile()
+                while True:
+                    line = file.readline()
+                    if line == b'' or line == '':
+                        break
+                    res.append(line)
+                self._stdout = b''.join(res)
+
         return self._stdout
 
     def __call__(self, arg):

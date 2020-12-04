@@ -1,7 +1,7 @@
 import sys
 import time
 
-from lib.filter import Filter, RegexFilter
+from lib.filter import Filter, RegexFilter, FuncFilter
 from pysh.lib.exec import Exec
 
 def generate():
@@ -20,10 +20,26 @@ if __name__ == '__main__':
     test_cmd = ["python .\\test_stream.py " + x for x in test_chain]
 
     if len(sys.argv) == 1:
+        g = Exec(test_cmd[0])
+        def _f(x: str):
+            print("FFF", x)
+            return x
+        f = FuncFilter(_f)
+        # f.set_stream(g)
+        g.stream_to(f)
+        # print(g._state, f._state)
+        print(f.stdout())
         # python .\test.py g 10 | python .\test.py c
         g = Exec(test_cmd[0])
         f = Exec(test_cmd[1])
-        f.set_stream(g)
+        # f.set_stream(g)
+        g.stream_to(f)
+        print(g._state, f._state)
+        print(f.stdout().decode())
+
+        g = Exec(test_cmd[0])
+        f = Exec(test_cmd[1])
+        f.set_input(g)
         print(g._state, f._state)
         print(f.stdout().decode())
     else:
