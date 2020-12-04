@@ -187,11 +187,21 @@ def generate_case_condition(var, con: List[Token]):
     if con[0].type == tokenize.OP and con[0].value == '==':
         return [var] + con
     if con[0].type == tokenize.OP and con[0].value == '(':
+        if con[1].type == tokenize.OP and con[1].value == ',':
+            assert con[3].type == tokenize.OP and con[3].value == ')'
+            return [var, Token(tokenize.OP, '<'), con[2]]
+        if con[3].type == tokenize.OP and con[3].value == ')':
+            return [con[1], Token(tokenize.OP, '<'), var]
         assert con[4].type == tokenize.OP and con[4].value == ')'
-        return [con[1], Token(tokenize.OP, '<'), var, Token(tokenize.OP, '>'), con[3]]
+        return [con[1], Token(tokenize.OP, '<'), var, Token(tokenize.OP, '<'), con[3]]
     if con[0].type == tokenize.OP and con[0].value == '[':
+        if con[1].type == tokenize.OP and con[1].value == ',':
+            assert con[3].type == tokenize.OP and con[3].value == ']'
+            return [var, Token(tokenize.OP, '<='), con[2]]
+        if con[3].type == tokenize.OP and con[3].value == ']':
+            return [con[1], Token(tokenize.OP, '<='), var]
         assert con[4].type == tokenize.OP and con[4].value == ']'
-        return [con[1], Token(tokenize.OP, '<='), var, Token(tokenize.OP, '>='), con[3]]
+        return [con[1], Token(tokenize.OP, '<='), var, Token(tokenize.OP, '<='), con[3]]
     # con[1](var)if callable(con[1])else con[1] == var
     return [
         Token(tokenize.NAME, 'check_switch_case_condition'),
@@ -217,13 +227,15 @@ def check_switch(tokens: TokenGenerator):
     var.end = (0, 0)
     tokens.clear()
     ans = TokenList([], switch_indent, TokenList.SWITCH)
+    op = 'if '
     while True:
         line = tokens.get_next_line()
         if line.indent == switch_indent + 1:
             # case 语句
             con, ope = check_case(line)
             con = generate_case_condition(var, con)
-            ans.push_back([Token(tokenize.NAME, 'if ')] + con + [Token(tokenize.OP, ':'), Token(tokenize.NEWLINE, '\n')])
+            ans.push_back([Token(tokenize.NAME, op)] + con + [Token(tokenize.OP, ':'), Token(tokenize.NEWLINE, '\n')])
+            op = 'elif '
             ans.push_back(TokenList(ope, switch_indent + 1, TokenList.SWITCH))
             tokens.clear()
             while True:

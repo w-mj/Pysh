@@ -1,12 +1,20 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 from distutils.sysconfig import get_python_lib
 
+'''
+    运行python setup.py check查看setup.py中的问题，添加了url、author、author_email
+    执行python setup.py build
+    执行python setup.py install
+'''
 SITE_PACKAGES_PATH = get_python_lib()
 print(SITE_PACKAGES_PATH)
 setup(
     name="pysh",
     version='1.0',
-    download_url='https://github.com/w-mj/Pysh',
+    #download_url='https://github.com/w-mj/Pysh',
+    url='https://github.com/w-mj/Pysh',
+    author='w-mj && lolydleo',
+    author_email='None',
     packages=["pysh", "pysh.codec", "pysh.lib"],
     license='MIT',
     description="Run program like bash scripts.",

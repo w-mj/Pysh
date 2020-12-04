@@ -1,4 +1,5 @@
-# `aaa`
+# coding:pysh
+from pysh.lib.exec import Exec
 if 1:
     print(1)
     if 2:
@@ -37,4 +38,12 @@ switch a:
     1 -> laksjf 3434
         sfdasdf ttt
     [1, 2] -> print('1')
+    [1,] -> print('2')
+        print('2 2')
+    [,2] ->
+        print('3')
+        print('4')
+    (1, 3) -> print('4')
+    (1,) -> print('4')
+    (, 3) -> print('4')
 print(000)
