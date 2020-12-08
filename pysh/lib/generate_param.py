@@ -73,4 +73,4 @@ if __name__ == '__main__':
         'nginx:v1.0': Param.COMMAND
     }
 
-    print(generate_param(d, prefix='++', shortcut='+'))
+    print(generate_param(d, prefix='--', shortcut='-'))

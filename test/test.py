@@ -28,18 +28,21 @@ if __name__ == '__main__':
 
     test_cmd = ["python .\\test.py " + x for x in test_chain]
     if len(sys.argv) == 1:
-        # python .\test.py g 10 | python .\test.py c
-        t = Exec(test_cmd[0]) | Exec(test_cmd[1])
-        print(t._cmd)
-        print(t.stdout())
+        # t = Exec("python .\\test.py generate 10")
+        # print(t.stdout())
+        # print("abcdef")
+        # # python .\test.py g 10 | python .\test.py c
+        # t = Exec(test_cmd[0]) | Exec(test_cmd[1])
+        # print(t._cmd)
+        # print(t.stdout())
 
-        t = Exec(test_cmd[0]) | Exec(test_cmd[4])
-        print(t._cmd)
-        print(t.stdout())
+        # t = Exec(test_cmd[0]) | Exec(test_cmd[4])
+        # # print(t._cmd)
+        # print(t.stdout())
 
         t1 = Exec(test_cmd[2])
         t2 = Exec(test_cmd[3])
-        t2.run_if_success(t1)
+        t2.run_if_fail(t1)
         print(t2.stdout())
     else:
         this_module = sys.modules[__name__]

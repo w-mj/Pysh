@@ -22,7 +22,7 @@ if __name__ == '__main__':
     if len(sys.argv) == 1:
         g = Exec(test_cmd[0])
         def _f(x: str):
-            print("FFF", x)
+            print("FFF", x, time.time())
             return x
         f = FuncFilter(_f)
         # f.set_stream(g)
