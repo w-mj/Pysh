@@ -23,7 +23,7 @@ def pysh_transform(stream):
         output = pysh_untokenize(parse)
     except Exception as ex:
         raise ex
-    return output.encode("utf-8")
+    return output
 
 def pysh_transform_string(input):
     stream = io.StringIO(input)

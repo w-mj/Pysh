@@ -198,6 +198,9 @@ class Exec(Filter):
         self._upstream = other
         return other
 
+    def set_stream_input(self, other):
+        self.set_stream(other)
+
     def _parse_exec_cmd(self, cmd, input: Union[Filter, 'Exec']):
         arr = ResultTable(input)
         ans = ''
@@ -251,6 +254,10 @@ class Exec(Filter):
         elif callable(ano):
             ano = FuncFilter(ano)
         ano.set_input(self)
+        return ano
+
+    def stream_to(self, ano):
+        ano.set_stream(self)
         return ano
 
     def if_success(self, ano: "Exec"):
