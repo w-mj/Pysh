@@ -260,10 +260,10 @@ class Exec(Filter):
         ano.set_stream(self)
         return ano
 
-    def if_success(self, ano: "Exec"):
+    def success_to(self, ano: "Exec"):
         ano.run_if_success(self)
         return ano
 
-    def if_fail(self, ano: "Exec"):
+    def fail_to(self, ano: "Exec"):
         ano.run_if_fail(self)
         return ano

@@ -10,8 +10,6 @@ from . import parser
 from encodings import utf_8
 from .tokenizer import pysh_tokenize, pysh_untokenize
 
-# text_create('mytxtfile', 'Hello world!')
-# 调用函数创建一个名为mytxtfile的.txt文件，并向其写入Hello world!
 
 def pysh_transform(stream):
     ##output = pysh_untokenize(pysh_tokenize(stream.readline))
