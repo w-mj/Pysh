@@ -7,6 +7,7 @@ import traceback
 import tokenize
 
 from . import parser
+from . import token
 from encodings import utf_8
 from .tokenizer import pysh_tokenize, pysh_untokenize
 
@@ -16,7 +17,7 @@ def pysh_transform(stream):
     ##return output.rstrip()
     try:
         tokens = tokenize.generate_tokens(stream.readline)
-        tokens = parser.TokenGenerator(tokens)
+        tokens = token.TokenGenerator(tokens)
         parse = parser.start(tokens)
         output = pysh_untokenize(parse)
     except Exception as ex:
