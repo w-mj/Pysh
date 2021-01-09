@@ -48,17 +48,18 @@ class PyshStreamReader(utf_8.StreamReader):
         self.stream = io.StringIO(pysh_transform(self.stream))
 
 def search_function(encoding):
-    if encoding != 'pysh': return None
+    # print(encoding)
+    # if encoding != 'pysh' : return None
     # Assume utf8 encoding
-    utf8=encodings.search_function('utf8')
+    utf8 = encodings.search_function('utf8')
     return codecs.CodecInfo(
-        name = 'pysh',
-        encode = utf8.encode,
-        decode = pysh_decode,
-        incrementalencoder = utf8.incrementalencoder,
-        incrementaldecoder = PyshIncrementalDecoder,
-        streamreader = PyshStreamReader,
-        streamwriter = utf8.streamwriter)
+        name='pysh',
+        encode=utf8.encode,
+        decode=pysh_decode,
+        incrementalencoder=utf8.incrementalencoder,
+        incrementaldecoder=PyshIncrementalDecoder,
+        streamreader=PyshStreamReader,
+        streamwriter=utf8.streamwriter)
 
 codecs.register(search_function)
 

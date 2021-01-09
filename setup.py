@@ -9,12 +9,12 @@ from distutils.sysconfig import get_python_lib
 SITE_PACKAGES_PATH = get_python_lib()
 print(SITE_PACKAGES_PATH)
 setup(
-    name="pysh",
+    name="pysh-run",
     version='1.0',
     #download_url='https://github.com/w-mj/Pysh',
     url='https://github.com/w-mj/Pysh',
     author='w-mj && lolydleo',
-    author_email='None',
+    author_email='wmj@alphamj.cn',
     packages=["pysh", "pysh.codec", "pysh.lib"],
     license='MIT',
     description="Run program like bash scripts.",

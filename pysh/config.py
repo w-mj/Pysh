@@ -2,7 +2,7 @@ import logging
 
 
 logging.basicConfig(
-    level=logging.DEBUG,
+    level=logging.INFO,
     format='%(thread)d-%(levelname)s %(asctime)s %(filename)s[%(funcName)s](%(lineno)d): %(message)s',
     datefmt='%H:%M:%S',
 )

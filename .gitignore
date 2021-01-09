@@ -2,6 +2,7 @@
 build
 dist
 pysh.egg-info
+pysh_run.egg-info
 __pycache__
 result.py
 err.txt
