@@ -49,7 +49,15 @@ def pysh_untokenize(tokens):
             prev_col = 0
         if ttype not in (tokenize.INDENT, tokenize.DEDENT):
             last = token
-    return ''.join(parts)
+    head = """
+from pysh.lib.exec import Exec
+from pysh.lib.filter import Filter
+from pysh.lib.pack_name import PackName
+from pysh.lib.generate_param import generateParam
+from pysh.lib.template import check_switch_case_condition
+
+"""
+    return head + ''.join(parts)
 
 
 def get_temp():

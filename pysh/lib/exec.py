@@ -3,7 +3,7 @@ import enum
 import threading
 from typing import List, Callable, Union, Optional
 
-from lib.FakeFile import RealFile, FakeFile
+from pysh.lib.FakeFile import RealFile, FakeFile
 from pysh.config import Config
 import logging as log
 import re

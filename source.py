@@ -1,5 +1,6 @@
 # coding:pysh
-from pysh.lib.exec import Exec
+import pysh.lib
+
 if 1:
     print(1)
     if 2:

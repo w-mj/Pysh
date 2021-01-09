@@ -1,7 +1,7 @@
 from sys import stdin
 import sys
 
-from lib.filter import Filter, RegexFilter
+from pysh.lib.filter import Filter, RegexFilter
 from pysh.lib.exec import Exec
 
 a = """

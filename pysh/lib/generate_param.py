@@ -52,6 +52,9 @@ def generate_param(p, prefix=None, delimiter=None, shortcut=None):
         return generate_dict(p, prefix, delimiter, shortcut, ' ')
     return str(p)
 
+def generateParam(*args, **kwargs):
+    return generate_param(*args, **kwargs)
+
 
 if __name__ == '__main__':
     d = {

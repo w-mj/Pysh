@@ -4,7 +4,7 @@ from typing import Callable, Optional, Union
 
 import enum
 
-from lib.FakeFile import FilterFile
+from pysh.lib.FakeFile import FilterFile
 
 
 class Filter:

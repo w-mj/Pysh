@@ -1,7 +1,7 @@
 import sys
 import time
 
-from lib.filter import Filter, RegexFilter
+from pysh.lib.filter import Filter, RegexFilter
 from pysh.lib.exec import Exec
 
 def generate():
