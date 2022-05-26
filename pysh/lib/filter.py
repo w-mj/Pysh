@@ -24,6 +24,7 @@ class Filter:
         self._upstream = upstream
         self._type = type
         self._stdout = None
+        self._stderr = None
         self._stream = False
 
     def stdout(self):
@@ -31,6 +32,12 @@ class Filter:
             return self._stdout
         self._stdout = self._upstream.stdout()
         return self._stdout
+
+    def stderr(self):
+        if self._stderr:
+            return self._stderr
+        self._stderr = self._upstream.stderr()
+        return self._stderr
 
     def returncode(self):
         return self._upstream.returncode()
@@ -55,6 +62,9 @@ class Filter:
 
     def outfile(self):
         raise RuntimeError("can not get out file")
+
+    def errfile(self):
+        raise RuntimeError("can not get err file")
 
     def set_stream(self, ano: 'Filter'):
         self._stream = True
@@ -93,11 +103,33 @@ class FuncFilter(Filter):
 
         return self._stdout
 
+    def stderr(self):
+        if not self._stderr:
+            if not self._stream:
+                self._stderr = self(self._upstream.result().stderr)
+            else:
+                res = []
+                file = self.errfile()
+                while True:
+                    line = file.readline()
+                    if line == b'' or line == '':
+                        break
+                    res.append(line)
+                if len(res) > 0 and isinstance(res[0], bytes):
+                    self._stderr = b''.join(res)
+                else:
+                    self._stderr = ''.join(res)
+
+        return self._stderr
+
     def __call__(self, arg):
         return self._func(arg)
 
     def outfile(self):
         return FilterFile(self._upstream.outfile(), self)
+
+    def errfile(self):
+        return FilterFile(self._upstream.errfile(), self)
 
 
 class RegexFilter(FuncFilter):

@@ -10,7 +10,7 @@ SITE_PACKAGES_PATH = get_python_lib()
 print(SITE_PACKAGES_PATH)
 setup(
     name="pysh-run",
-    version='1.0',
+    version='1.1',
     #download_url='https://github.com/w-mj/Pysh',
     url='https://github.com/w-mj/Pysh',
     author='w-mj && lolydleo',

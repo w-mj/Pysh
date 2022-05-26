@@ -20,6 +20,7 @@ pip install pysh-run
     ```python
     from pysh.lib import Exec
     print(Exec("cmd1").pipe_to(Exec("cmd2")).stdout())
+    print((Exec("cmd1") | Exec("cmd2")).stdout())  # 使用管道运算符
     ```
 
 3. 正则过滤

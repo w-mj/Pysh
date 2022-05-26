@@ -90,7 +90,8 @@ class Exec(Filter):
             log.debug("start run " + self._cmd)
             log.debug("with input " + str(input_str))
             self._cmd = self._parse_exec_cmd(self._cmd, self._upstream)
-            self._process = subprocess.Popen(self._cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            self._process = subprocess.Popen(self._cmd, shell=True,
+                                             stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             if isinstance(input_str, str):
                 input_str = input_str.encode()
             if input_str:
@@ -98,7 +99,8 @@ class Exec(Filter):
         else:
             # 流
             log.debug("start run stream " + self._cmd)
-            self._process = subprocess.Popen(self._cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            self._process = subprocess.Popen(self._cmd, shell=True,
+                                             stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
             def _pass():
                 while True:
@@ -178,6 +180,11 @@ class Exec(Filter):
         if self._state == Exec.State.NOT_START:
             self.exec()
         return RealFile(self._process.stdout)
+
+    def errfile(self):
+        if self._state == Exec.State.NOT_START:
+            self.exec()
+        return RealFile(self._process.stderr)
 
     def __or__(self, other):
         other.set_input(self)
